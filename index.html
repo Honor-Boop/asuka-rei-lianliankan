@@ -403,17 +403,17 @@
       <button class="diff-opt" data-d="trainee">
         <b>見習い訓練</b>
         <span>6×4 棋盘 · 24 张牌<br>12 种图案 · 每张仅 1 对</span>
-        <em>时限 120 秒</em>
+        <em>时限 90 秒</em>
       </button>
       <button class="diff-opt" data-d="agent">
         <b>正規隊員</b>
         <span>8×6 棋盘 · 48 张牌<br>24 种图案 · 每张仅 1 对</span>
-        <em>时限 300 秒</em>
+        <em>时限 210 秒</em>
       </button>
       <button class="diff-opt" data-d="angel">
         <b>使徒級</b>
-        <span>10×8 棋盘 · 80 张牌<br>20 种图案 · 每种至多 2 对</span>
-        <em>时限 540 秒</em>
+        <span>10×8 棋盘 · 连续 8 局<br>20 种图案 · 第 2 局起<br>棋子每 10 秒定向位移</span>
+        <em>每局 150 秒</em>
       </button>
     </div>
     <button id="diffCancel" class="diff-opt hidden" style="display:none;width:auto;padding:8px 22px;font-size:12px">返回当前对局</button>
@@ -444,10 +444,17 @@
 
 /* ================= 配置 ================= */
 const DIFFS = {
-  trainee: { name: "見習い訓練", cols: 6,  rows: 4, types: 12, time: 120, tag: "EVA-04" },
-  agent:   { name: "正規隊員",   cols: 8,  rows: 6, types: 24, time: 300, tag: "EVA-01" },
-  angel:   { name: "使徒級",     cols: 10, rows: 8, types: 20, time: 540, tag: "EVA-02" },
+  trainee: { name: "見習い訓練", cols: 6,  rows: 4, types: 12, time: 90,  tag: "EVA-04" },
+  agent:   { name: "正規隊員",   cols: 8,  rows: 6, types: 24, time: 210, tag: "EVA-01" },
+  angel:   { name: "使徒級",     cols: 10, rows: 8, types: 20, time: 150, tag: "EVA-02", rounds: 8, drift: true },
 };
+const DRIFT_EVERY = 10;   // 使徒級第 2 局起：棋子位移间隔（秒）
+const DRIFT_DIRS = [      // 位移方向按局依次轮换：右→下→左→上
+  { dr: 0,  dc: 1,  arrow: "→" },
+  { dr: 1,  dc: 0,  arrow: "↓" },
+  { dr: 0,  dc: -1, arrow: "←" },
+  { dr: -1, dc: 0,  arrow: "↑" },
+];
 const BONUS_PER_MATCH = 3;             // 每次消除回收的秒数
 const HINTS_MAX = 3;
 const COMBO_WINDOW = 5000;             // 连击时间窗口 ms
@@ -492,9 +499,10 @@ let selected = null;
 let score = 0, combo = 0, lastMatchAt = 0;
 let hintsLeft = HINTS_MAX;
 let timeLeft = 0, timerId = null, over = false;
+let round = 1, driftIn = 0, elapsedTotal = 0;
 let soundOn = true;
 let diffKey = null;
-let cell = 90, GAP = 7, PAD = 30;      // 布局尺寸（JS 计算）
+let cell = 90, GAP = 7, PAD = 30;
 let audioCtx = null;
 
 const $ = (id) => document.getElementById(id);
@@ -738,13 +746,23 @@ function renderTime() {
   el.textContent = fmtTime(timeLeft);
   el.classList.toggle("danger", timeLeft <= 15 && !over);
 }
+function driftActive() {
+  const d = DIFFS[diffKey];
+  return !!(d && d.drift && round >= 2 && !over);
+}
+
 function startTimer() {
   stopTimer();
   timerId = setInterval(() => {
     timeLeft--;
+    elapsedTotal++;
     renderTime();
     if (timeLeft <= 10 && timeLeft > 0) sndTick();
-    if (timeLeft <= 0) { timeLeft = 0; renderTime(); gameOver(); }
+    if (timeLeft <= 0) { timeLeft = 0; renderTime(); gameOver(); return; }
+    if (driftActive()) {
+      driftIn--;
+      if (driftIn <= 0) { driftIn = DRIFT_EVERY; doDrift(); }
+    }
   }, 1000);
 }
 function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
@@ -760,6 +778,43 @@ function gainTime() {
 function fmtTime(s) {
   s = Math.max(0, Math.floor(s));
   return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+/* ================= 使徒級：棋子定向位移 ================= */
+function doDrift() {
+  const d = DRIFT_DIRS[(round - 2) % DRIFT_DIRS.length];
+  const sel = selected;
+  const ng = new Array(ROWS * COLS).fill(null);
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = grid[idx(r, c)];
+    if (t === null) continue;
+    ng[idx((r + d.dr + ROWS) % ROWS, (c + d.dc + COLS) % COLS)] = t;
+  }
+  grid = ng;
+  selected = sel ? {
+    r: (sel.r + d.dr + ROWS) % ROWS,
+    c: (sel.c + d.dc + COLS) % COLS,
+  } : null;
+  if (pathAnimId) {   // 位移时放弃进行中的连线动画
+    cancelAnimationFrame(pathAnimId);
+    pathAnimId = null;
+    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  // 滑动动画：先把棋盘整体错位一格，再过渡回位
+  gridEl.style.transition = "none";
+  gridEl.style.transform = `translate(${-d.dc * (cell + GAP)}px, ${-d.dr * (cell + GAP)}px)`;
+  paintAll();
+  if (selected) tiles[idx(selected.r, selected.c)].classList.add("selected");
+  void gridEl.offsetWidth;
+  gridEl.style.transition = "transform .28s ease";
+  gridEl.style.transform = "translate(0, 0)";
+  toast(`棋子位移 ${d.arrow}`);
+  beep(500, 0.08, "triangle", 0.08);
+  if (!findAnyPair()) {   // 确保位移后仍然可消除通关
+    selected = null;
+    toast("位移后无可用配对，自动洗牌 ↻");
+    setTimeout(() => { shuffleRemaining(); paintAll(); sndShuffle(); }, 420);
+  }
 }
 
 /* ================= 游戏流程 ================= */
@@ -783,24 +838,26 @@ function onTileClick(r, c) {
   tiles[idx(a.r, a.c)].classList.remove("selected");
   selected = null;
 
-  if (ta !== tb) {
-    tiles[idx(b.r, b.c)].classList.add("wrong");
-    setTimeout(() => tiles[idx(b.r, b.c)].classList.remove("wrong"), 340);
-    selected = b;
-    tiles[idx(b.r, b.c)].classList.add("selected");
-    sndFail();
-    return;
-  }
-  const path = findPath(a, b);
-  if (!path) {
+  if (ta !== tb) {          // 图案不同：判为选择错误，取消选中
     tiles[idx(a.r, a.c)].classList.add("wrong");
     tiles[idx(b.r, b.c)].classList.add("wrong");
     setTimeout(() => {
       tiles[idx(a.r, a.c)].classList.remove("wrong");
       tiles[idx(b.r, b.c)].classList.remove("wrong");
     }, 340);
-    selected = b;
-    tiles[idx(b.r, b.c)].classList.add("selected");
+    selected = null;
+    sndFail();
+    return;
+  }
+  const path = findPath(a, b);
+  if (!path) {              // 同图案但连不通：同样取消选中
+    tiles[idx(a.r, a.c)].classList.add("wrong");
+    tiles[idx(b.r, b.c)].classList.add("wrong");
+    setTimeout(() => {
+      tiles[idx(a.r, a.c)].classList.remove("wrong");
+      tiles[idx(b.r, b.c)].classList.remove("wrong");
+    }, 340);
+    selected = null;
     sndFail();
     return;
   }
@@ -824,7 +881,12 @@ function onTileClick(r, c) {
   updateHUD();
 
   const left = countRemaining();
-  if (left === 0) { win(); return; }
+  if (left === 0) {
+    const d = DIFFS[diffKey];
+    if (d.rounds && round < d.rounds) { nextRound(); return; }
+    win();
+    return;
+  }
   if (!findAnyPair()) {
     toast("没有可消除的配对了，自动洗牌 ↻");
     setTimeout(() => { shuffleRemaining(); paintAll(); sndShuffle(); }, 480);
@@ -855,7 +917,6 @@ function updateHUD() {
   $("pairs").textContent = countRemaining() / 2;
   $("hintLeft").textContent = hintsLeft;
   $("hintBtn").disabled = hintsLeft <= 0;
-  // 侧边同步率面板：随消除进度与连击上涨，连击 ≥3 进入"暴走"
   if (window.__decoSyncRate) {
     const progress = (ROWS * COLS - countRemaining()) / (ROWS * COLS);
     window.__decoSyncRate(40.5 + progress * 130 + combo * 9, combo >= 3);
@@ -871,9 +932,10 @@ function saveRecord(result) {
   const d = DIFFS[diffKey];
   const rec = {
     t: Date.now(), d: diffKey,
-    s: score, u: Math.max(0, d.time - timeLeft),
+    s: score, u: Math.max(0, elapsedTotal),
     w: result === "win",
     left: countRemaining() / 2,
+    r: d.rounds ? round : 0,
   };
   const h = loadHistory();
   h.unshift(rec);
@@ -888,10 +950,11 @@ function renderHistory() {
     const d = DIFFS[r.d] || { name: r.d };
     const dt = new Date(r.t);
     const when = `${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+    const roundTxt = r.r ? `第 ${r.r} 局 · ` : "";
     return `<div class="hist-row">
       <span class="res ${r.w ? "w" : "l"}">${r.w ? "补完成功" : "作戦失敗"}</span>
       <span class="dname">${d.name}</span>
-      <span class="dim">${r.w ? "用时 " + fmtTime(r.u) : "剩 " + r.left + " 对"}</span>
+      <span class="dim">${r.w ? "用时 " + fmtTime(r.u) : roundTxt + "剩 " + r.left + " 对"}</span>
       <span class="num">${r.s} 分</span>
       <span class="dim">${when}</span>
     </div>`;
@@ -916,9 +979,10 @@ function win() {
   if (window.__decoSyncRate) window.__decoSyncRate(400, true);
   saveRecord("win");
   celebrateFx();
+  const d = DIFFS[diffKey];
+  const used = elapsedTotal;
   const bestKey = "eva_llk_best_" + diffKey;
   const prev = Number(localStorage.getItem(bestKey) || 0);
-  const used = DIFFS[diffKey].time - timeLeft;
   let bestHtml;
   if (!prev || used < prev) {
     localStorage.setItem(bestKey, used);
@@ -926,9 +990,10 @@ function win() {
   } else {
     bestHtml = "该难度最佳纪录：" + fmtTime(prev);
   }
+  const roundTxt = d.rounds ? `${d.rounds} 局全通 · ` : "";
   showResult("人類補完計画 · 達成",
     "恭喜，你已成功补全人类。所有的心，就此相互理解。",
-    "win", `用时 <b>${fmtTime(used)}</b> · 得分 <b>${score}</b>`, bestHtml);
+    "win", `${roundTxt}用时 <b>${fmtTime(used)}</b> · 得分 <b>${score}</b>`, bestHtml);
 }
 
 function gameOver() {
@@ -938,9 +1003,29 @@ function gameOver() {
   sndLose();
   if (window.__decoSyncRate) window.__decoSyncRate(8, false);
   saveRecord("lose");
+  const d = DIFFS[diffKey];
+  const roundTxt = d.rounds ? `，止步第 ${round} 局` : "";
   showResult("作戦失敗",
-    "反应时间耗尽，补完计划被迫中止……",
+    `反应时间耗尽，补完计划被迫中止${roundTxt}……`,
     "lose", `得分 <b>${score}</b> · 剩余 <b>${countRemaining() / 2}</b> 对未消除`, "");
+}
+
+/* ================= 使徒級：局间推进 ================= */
+function nextRound() {
+  const d = DIFFS[diffKey];
+  round++;
+  score += 100;
+  updateHUD();
+  deal();
+  selected = null;
+  paintAll();
+  timeLeft = d.time;
+  renderTime();
+  driftIn = DRIFT_EVERY;
+  const nd = driftActive() ? DRIFT_DIRS[(round - 2) % DRIFT_DIRS.length] : null;
+  toast(`第 ${round - 1} 局完成 +100 · 第 ${round}/${d.rounds} 局` + (nd ? ` · 位移 ${nd.arrow}` : ""));
+  beep(700, 0.1, "sine", 0.12); beep(900, 0.12, "sine", 0.12, 0.1);
+  updateDiffTag();
 }
 
 /* ================= 通关特效（EVA 元素） ================= */
@@ -1028,10 +1113,23 @@ function celebrateFx() {
 }
 
 /* ================= 新开一局 ================= */
+function updateDiffTag() {
+  const d = DIFFS[diffKey];
+  let txt = d.tag + " · " + d.name;
+  if (d.rounds) {
+    txt += ` · 第${round}/${d.rounds}局`;
+    if (round >= 2) txt += ` · 位移 ${DRIFT_DIRS[(round - 2) % DRIFT_DIRS.length].arrow}`;
+  }
+  $("diffTag").textContent = txt;
+}
+
 function newGame(key) {
   if (key) diffKey = key;
   const d = DIFFS[diffKey];
   COLS = d.cols; ROWS = d.rows;
+  round = 1;
+  driftIn = DRIFT_EVERY;
+  elapsedTotal = 0;
   // 随机抽取该难度使用的图案
   typePool = shuffled(TYPES.map((_, i) => i)).slice(0, d.types);
   pairsPerType = (COLS * ROWS) / (d.types * 2);
@@ -1041,7 +1139,7 @@ function newGame(key) {
   selected = null;
   score = 0; combo = 0; lastMatchAt = 0;
   hintsLeft = HINTS_MAX;
-  $("diffTag").textContent = d.tag + " · " + d.name;
+  updateDiffTag();
   $("overlay").classList.remove("show");
   layout();
   buildTiles();
