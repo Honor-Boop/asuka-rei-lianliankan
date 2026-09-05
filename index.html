@@ -402,17 +402,17 @@
     <div class="diff-list">
       <button class="diff-opt" data-d="trainee">
         <b>見習い訓練</b>
-        <span>6×4 棋盘 · 24 张牌<br>6 种图案</span>
+        <span>6×4 棋盘 · 24 张牌<br>12 种图案 · 每张仅 1 对</span>
         <em>时限 120 秒</em>
       </button>
       <button class="diff-opt" data-d="agent">
         <b>正規隊員</b>
-        <span>8×6 棋盘 · 48 张牌<br>12 种图案</span>
+        <span>8×6 棋盘 · 48 张牌<br>24 种图案 · 每张仅 1 对</span>
         <em>时限 300 秒</em>
       </button>
       <button class="diff-opt" data-d="angel">
         <b>使徒級</b>
-        <span>10×8 棋盘 · 80 张牌<br>8 种图案 · 大量重复</span>
+        <span>10×8 棋盘 · 80 张牌<br>20 种图案 · 每种至多 2 对</span>
         <em>时限 540 秒</em>
       </button>
     </div>
@@ -444,9 +444,9 @@
 
 /* ================= 配置 ================= */
 const DIFFS = {
-  trainee: { name: "見習い訓練", cols: 6,  rows: 4, types: 6,  time: 120, tag: "EVA-04" },
-  agent:   { name: "正規隊員",   cols: 8,  rows: 6, types: 12, time: 300, tag: "EVA-01" },
-  angel:   { name: "使徒級",     cols: 10, rows: 8, types: 8,  time: 540, tag: "EVA-02" },
+  trainee: { name: "見習い訓練", cols: 6,  rows: 4, types: 12, time: 120, tag: "EVA-04" },
+  agent:   { name: "正規隊員",   cols: 8,  rows: 6, types: 24, time: 300, tag: "EVA-01" },
+  angel:   { name: "使徒級",     cols: 10, rows: 8, types: 20, time: 540, tag: "EVA-02" },
 };
 const BONUS_PER_MATCH = 3;             // 每次消除回收的秒数
 const HINTS_MAX = 3;
@@ -458,12 +458,28 @@ const TYPES = [
   { id: "rei_4",   char: "rei",   name: "绫波丽" },
   { id: "rei_5",   char: "rei",   name: "绫波丽" },
   { id: "rei_6",   char: "rei",   name: "绫波丽" },
+  { id: "rei_7",   char: "rei",   name: "绫波丽" },
+  { id: "rei_8",   char: "rei",   name: "绫波丽" },
+  { id: "rei_9",   char: "rei",   name: "绫波丽" },
+  { id: "rei_10",  char: "rei",   name: "绫波丽" },
+  { id: "rei_11",  char: "rei",   name: "绫波丽" },
+  { id: "rei_12",  char: "rei",   name: "绫波丽" },
+  { id: "rei_13",  char: "rei",   name: "绫波丽" },
+  { id: "rei_14",  char: "rei",   name: "绫波丽" },
+  { id: "rei_15",  char: "rei",   name: "绫波丽" },
+  { id: "rei_16",  char: "rei",   name: "绫波丽" },
   { id: "asuka_1", char: "asuka", name: "明日香" },
   { id: "asuka_2", char: "asuka", name: "明日香" },
   { id: "asuka_3", char: "asuka", name: "明日香" },
   { id: "asuka_4", char: "asuka", name: "明日香" },
   { id: "asuka_5", char: "asuka", name: "明日香" },
   { id: "asuka_6", char: "asuka", name: "明日香" },
+  { id: "asuka_7", char: "asuka", name: "明日香" },
+  { id: "asuka_8", char: "asuka", name: "明日香" },
+  { id: "asuka_9", char: "asuka", name: "明日香" },
+  { id: "asuka_10", char: "asuka", name: "明日香" },
+  { id: "asuka_11", char: "asuka", name: "明日香" },
+  { id: "asuka_12", char: "asuka", name: "明日香" },
 ];
 
 /* ================= 状态 ================= */
