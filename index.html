@@ -306,6 +306,7 @@
 
 <script src="wallpapers/manifest.js"></script>
 <script src="background.js"></script>
+<script src="deco.js"></script>
 
 <script>
 "use strict";
@@ -671,6 +672,11 @@ function updateHUD() {
   $("pairs").textContent = countRemaining() / 2;
   $("hintLeft").textContent = hintsLeft;
   $("hintBtn").disabled = hintsLeft <= 0;
+  // 侧边同步率面板：随消除进度与连击上涨，连击 ≥3 进入"暴走"
+  if (window.__decoSyncRate) {
+    const progress = (ROWS * COLS - countRemaining()) / (ROWS * COLS);
+    window.__decoSyncRate(40.5 + progress * 130 + combo * 9, combo >= 3);
+  }
 }
 
 function fmtTime(s) {
@@ -686,6 +692,7 @@ function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } 
 function win() {
   stopTimer();
   sndWin();
+  if (window.__decoSyncRate) window.__decoSyncRate(400, true); // EVA-01 觉醒：同步率爆表
   const bestKey = "eva_lianliankan_best";
   let best = Number(localStorage.getItem(bestKey) || 0);
   let bestText = "最佳纪录：--";
@@ -707,6 +714,7 @@ function newGame() {
   score = 0; combo = 0; lastMatchAt = 0;
   hintsLeft = HINTS_MAX;
   seconds = 0;
+  if (window.__decoSyncRate) window.__decoSyncRate(40.5, false);
   $("time").textContent = "00:00";
   $("overlay").classList.remove("show");
   layout();
