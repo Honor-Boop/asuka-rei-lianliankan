@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>EVA 图库 · 明日香 × 绫波丽 2K 壁纸</title>
+<style>
+  :root {
+    --bg2: #0b0817;
+    --panel: rgba(255, 255, 255, 0.055);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --rei: #58b6ff;
+    --asuka: #ff6a3d;
+    --gold: #ffd54a;
+    --text: #ece8f7;
+    --text-dim: #9a92b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg2);
+    min-height: 100vh;
+    padding: 18px clamp(12px, 4vw, 48px) 60px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 4px 4px 18px;
+  }
+  .brand { display: flex; flex-direction: column; }
+  h1 {
+    font-size: 28px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--rei) 0%, #b48cff 55%, var(--asuka) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .subtitle { font-size: 12px; color: var(--text-dim); letter-spacing: 3px; margin-top: 3px; }
+  .back {
+    font-size: 13px; color: var(--text); text-decoration: none;
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 8px 14px; transition: background 0.15s;
+  }
+  .back:hover { background: rgba(255,255,255,0.12); }
+  .filters { margin-left: auto; display: flex; gap: 8px; }
+  .filters button {
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 999px; padding: 8px 16px; cursor: pointer; transition: all 0.15s;
+  }
+  .filters button:hover { background: rgba(255,255,255,0.12); }
+  .filters button.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(255,213,74,0.25); }
+  .count { width: 100%; max-width: 1280px; margin: 0 auto 10px; font-size: 12px; color: var(--text-dim); }
+
+  .grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    cursor: zoom-in;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.35); box-shadow: 0 10px 26px rgba(0,0,0,0.5); }
+  .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+  .card .meta {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; gap: 8px;
+    padding: 22px 10px 8px;
+    background: linear-gradient(transparent, rgba(8, 5, 18, 0.88));
+    font-size: 12px;
+  }
+  .badge { border-radius: 6px; padding: 2px 8px; font-size: 11px; letter-spacing: 1px; }
+  .badge.rei { background: rgba(88, 182, 255, 0.2); color: var(--rei); border: 1px solid rgba(88,182,255,0.5); }
+  .badge.asuka { background: rgba(255, 106, 61, 0.18); color: var(--asuka); border: 1px solid rgba(255,106,61,0.5); }
+  .res { margin-left: auto; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+
+  /* ---------- 灯箱 ---------- */
+  #lightbox {
+    position: fixed; inset: 0; z-index: 50;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(5, 3, 12, 0.88);
+    backdrop-filter: blur(8px);
+  }
+  #lightbox.show { display: flex; }
+  #lightbox img {
+    max-width: min(92vw, 1600px);
+    max-height: 84vh;
+    border-radius: 10px;
+    box-shadow: 0 12px 70px rgba(0,0,0,0.8);
+  }
+  .lb-bar {
+    position: fixed; top: 14px; left: 0; right: 0;
+    display: flex; justify-content: center; align-items: center; gap: 14px;
+  }
+  .lb-bar span { font-size: 13px; color: var(--text-dim); }
+  .lb-bar .lb-title { color: var(--text); font-weight: 700; }
+  .lb-nav {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    font-size: 42px; line-height: 1; color: var(--text);
+    background: rgba(255,255,255,0.07); border: 1px solid var(--panel-border);
+    width: 56px; height: 72px; border-radius: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .lb-nav:hover { background: rgba(255,255,255,0.16); }
+  #lbPrev { left: 18px; }
+  #lbNext { right: 18px; }
+  #lbClose {
+    position: fixed; top: 14px; right: 16px;
+    font-size: 18px; color: var(--text);
+    background: rgba(255,255,255,0.07); border: 1px solid var(--panel-border);
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+  }
+  #lbClose:hover { background: rgba(255,255,255,0.16); }
+  #lbDownload {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    font-size: 13px; color: var(--text); text-decoration: none;
+    background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 9px 18px;
+  }
+  #lbDownload:hover { background: rgba(255,255,255,0.16); }
+
+  footer {
+    max-width: 1280px; margin: 26px auto 0; text-align: center;
+    font-size: 12px; color: var(--text-dim); line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>EVA 图库</h1>
+    <div class="subtitle">明日香 × 绫波丽 · 2K+ WALLPAPERS</div>
+  </div>
+  <a class="back" href="index.html">◀ 返回连连看</a>
+  <div class="filters" id="filters">
+    <button data-char="all" class="active">全部</button>
+    <button data-char="rei">绫波丽</button>
+    <button data-char="asuka">明日香</button>
+  </div>
+</header>
+<div class="count" id="count"></div>
+<div class="grid" id="grid"></div>
+
+<footer>
+  图片来自 safebooru 公开图库（safe 分级，2K 以上分辨率），仅供个人欣赏，版权归原作者所有。
+</footer>
+
+<div id="lightbox">
+  <img id="lbImg" src="" alt="">
+  <div class="lb-bar">
+    <span class="lb-title" id="lbTitle"></span>
+    <span id="lbCounter"></span>
+  </div>
+  <button class="lb-nav" id="lbPrev" title="上一张 (←)">‹</button>
+  <button class="lb-nav" id="lbNext" title="下一张 (→)">›</button>
+  <button id="lbClose" title="关闭 (Esc)">✕</button>
+  <a id="lbDownload" download>⬇ 下载原图</a>
+</div>
+
+<script src="wallpapers/manifest.js"></script>
+<script src="background.js"></script>
+<script>
+"use strict";
+const LIST = window.WALLPAPER_LIST || [];
+const CHAR_NAME = { rei: "绫波丽", asuka: "明日香" };
+let filterChar = "all";
+let viewList = [];      // 当前筛选下的条目
+let lbIndex = 0;
+
+const grid = document.getElementById("grid");
+const lightbox = document.getElementById("lightbox");
+
+function render() {
+  viewList = LIST.filter(w => filterChar === "all" || w.char === filterChar);
+  grid.innerHTML = "";
+  viewList.forEach((w, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${w.thumb}" alt="${CHAR_NAME[w.char]}壁纸" loading="lazy">
+      <div class="meta">
+        <span class="badge ${w.char}">${CHAR_NAME[w.char]}</span>
+        <span class="res">${w.res}</span>
+      </div>`;
+    card.addEventListener("click", () => openLightbox(i));
+    grid.appendChild(card);
+  });
+  document.getElementById("count").textContent =
+    `共 ${viewList.length} 张 · 2K（2560×1440）以上分辨率 · 点击查看大图`;
+}
+
+function openLightbox(i) {
+  lbIndex = i;
+  const w = viewList[i];
+  document.getElementById("lbImg").src = w.src;
+  document.getElementById("lbTitle").textContent = CHAR_NAME[w.char];
+  document.getElementById("lbCounter").textContent = `${i + 1} / ${viewList.length}`;
+  document.getElementById("lbDownload").href = w.src;
+  lightbox.classList.add("show");
+}
+function closeLightbox() { lightbox.classList.remove("show"); }
+function step(d) { openLightbox((lbIndex + d + viewList.length) % viewList.length); }
+
+document.getElementById("lbClose").addEventListener("click", closeLightbox);
+document.getElementById("lbPrev").addEventListener("click", e => { e.stopPropagation(); step(-1); });
+document.getElementById("lbNext").addEventListener("click", e => { e.stopPropagation(); step(1); });
+lightbox.addEventListener("click", e => { if (e.target === lightbox) closeLightbox(); });
+document.addEventListener("keydown", e => {
+  if (!lightbox.classList.contains("show")) return;
+  if (e.key === "Escape") closeLightbox();
+  if (e.key === "ArrowLeft") step(-1);
+  if (e.key === "ArrowRight") step(1);
+});
+
+document.getElementById("filters").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  filterChar = btn.dataset.char;
+  document.querySelectorAll("#filters button").forEach(b =>
+    b.classList.toggle("active", b === btn));
+  render();
+});
+
+render();
+</script>
+</body>
+</html>

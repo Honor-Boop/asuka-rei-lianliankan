@@ -273,6 +273,7 @@
     <button id="hintBtn">💡 提示 ×<span id="hintLeft">3</span></button>
     <button id="shuffleBtn">🔀 洗牌</button>
     <button id="restartBtn">↻ 重开</button>
+    <button id="bgBtn" title="切换下一张背景壁纸">🖼 换背景</button>
     <button id="soundBtn" title="音效开关">🔊</button>
   </div>
 </header>
@@ -295,11 +296,16 @@
     <img src="images/asuka_4.jpg" alt="明日香"> 明日香
     &nbsp;×&nbsp;
     <img src="images/rei_3.jpg" alt="绫波丽"> 绫波丽
+    &nbsp;·&nbsp;
+    <a href="gallery.html" style="color:#9a92b8">🖼 壁纸图库</a>
   </div>
   点击两张相同的图片，若能用不超过 2 个拐点的线连通（可绕棋盘外侧）即可消除
 </footer>
 
 <div id="toast"></div>
+
+<script src="wallpapers/manifest.js"></script>
+<script src="background.js"></script>
 
 <script>
 "use strict";
@@ -748,6 +754,9 @@ $("shuffleBtn").addEventListener("click", () => {
 
 $("restartBtn").addEventListener("click", () => { ensureAudio(); newGame(); toast("新的一局开始！"); });
 $("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("bgBtn").addEventListener("click", () => {
+  if (window.__bgNext) { window.__bgNext(); toast("已切换背景壁纸"); }
+});
 $("soundBtn").addEventListener("click", function () {
   soundOn = !soundOn;
   this.textContent = soundOn ? "🔊" : "🔇";
