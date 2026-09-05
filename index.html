@@ -429,7 +429,7 @@ function simulateSolvable(types) {
 
 function deal() {
   const base = [];
-  TYPES.forEach((_, i) => { for (let k = 0; k < PAIRS_PER_TYPE; k++) base.push(i); });
+  TYPES.forEach((_, i) => { for (let k = 0; k < PAIRS_PER_TYPE * 2; k++) base.push(i); });
   for (let attempt = 0; attempt < 300; attempt++) {
     const t = shuffled(base);
     if (simulateSolvable(t)) { grid = t.slice(); return; }
