@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>EVA 连连看 · 明日香 × 绫波丽</title>
+<style>
+  :root {
+    --bg1: #17102b;
+    --bg2: #0b0817;
+    --panel: rgba(255, 255, 255, 0.055);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --rei: #58b6ff;
+    --asuka: #ff6a3d;
+    --gold: #ffd54a;
+    --text: #ece8f7;
+    --text-dim: #9a92b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(88, 182, 255, 0.14), transparent 60%),
+      radial-gradient(1000px 700px at 12% 110%, rgba(255, 106, 61, 0.13), transparent 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 26px),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 10px 26px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  header {
+    width: 100%;
+    max-width: 980px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 6px 6px 12px;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .logo {
+    font-size: 30px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--rei) 0%, #b48cff 55%, var(--asuka) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 24px rgba(148, 120, 255, 0.35);
+    line-height: 1.05;
+  }
+  .logo small { font-size: 17px; letter-spacing: 6px; }
+  .subtitle { font-size: 12px; color: var(--text-dim); letter-spacing: 3px; margin-top: 3px; }
+
+  .stats {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 6px 12px;
+    text-align: center;
+    min-width: 66px;
+  }
+  .stat .label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+  .stat b { font-size: 17px; font-variant-numeric: tabular-nums; }
+  #combo.burning { color: var(--gold); text-shadow: 0 0 10px rgba(255, 213, 74, 0.7); }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .controls button {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 8px 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .controls button:hover:not(:disabled) { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+  .controls button:disabled { opacity: 0.38; cursor: not-allowed; }
+
+  /* ---------- board ---------- */
+  #boardWrap { position: relative; margin-top: 6px; }
+  #grid {
+    position: absolute;
+    display: grid;
+    gap: var(--gap);
+    grid-template-columns: repeat(8, var(--cell));
+  }
+  .tile {
+    width: var(--cell);
+    height: var(--cell);
+    border: 2px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03));
+    padding: 0;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.12s, box-shadow 0.15s, border-color 0.15s, opacity 0.3s;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  }
+  .tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    border-radius: 9px;
+  }
+  .tile.rei { border-bottom: 3px solid rgba(88, 182, 255, 0.75); }
+  .tile.asuka { border-bottom: 3px solid rgba(255, 106, 61, 0.75); }
+  .tile:hover:not(.removed) { transform: translateY(-2px); border-color: rgba(255,255,255,0.4); }
+  .tile.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 2px var(--gold), 0 0 18px rgba(255, 213, 74, 0.55);
+    transform: scale(1.05);
+    z-index: 2;
+  }
+  .tile.hinted { animation: hintPulse 0.7s ease-in-out 3; }
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(94, 255, 163, 0); }
+    50% { box-shadow: 0 0 0 3px rgba(94, 255, 163, 0.9), 0 0 20px rgba(94, 255, 163, 0.6); }
+  }
+  .tile.wrong { animation: shake 0.32s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-3px); }
+  }
+  .tile.removed {
+    opacity: 0;
+    transform: scale(0.25) rotate(10deg);
+    pointer-events: none;
+    border-color: transparent;
+  }
+  #pathCanvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  /* ---------- overlay / toast ---------- */
+  #overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 6, 20, 0.72);
+    backdrop-filter: blur(6px);
+    border-radius: 14px;
+  }
+  #overlay.show { display: flex; }
+  .win-card {
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 30px 44px;
+    box-shadow: 0 10px 60px rgba(0,0,0,0.6);
+  }
+  .win-card h2 {
+    font-size: 26px;
+    font-style: italic;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 10px;
+  }
+  .win-card p { color: var(--text-dim); font-size: 14px; margin: 4px 0; }
+  .win-card p b { color: var(--gold); }
+  .win-card button {
+    margin-top: 16px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: #14101f;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    border: none;
+    border-radius: 10px;
+    padding: 10px 26px;
+    cursor: pointer;
+  }
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: 34px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20, 14, 36, 0.92);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    opacity: 0;
+    transition: all 0.25s;
+    z-index: 99;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .score-pop {
+    position: absolute;
+    z-index: 8;
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--gold);
+    text-shadow: 0 0 12px rgba(255, 213, 74, 0.8);
+    pointer-events: none;
+    animation: popUp 0.8s ease-out forwards;
+  }
+  @keyframes popUp {
+    0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
+    25% { transform: translate(-50%, -10px) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -42px) scale(1); opacity: 0; }
+  }
+
+  footer {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+  footer .legend img {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    object-fit: cover;
+    vertical-align: -6px;
+    margin: 0 2px;
+  }
+
+  @media (max-width: 640px) {
+    .stats { margin-left: 0; }
+    .logo { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">EVA <small>连连看</small></div>
+    <div class="subtitle">明日香 × 绫波丽 · LIANLIANKAN</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="label">得分</div><b id="score">0</b></div>
+    <div class="stat"><div class="label">连击</div><b id="combo">—</b></div>
+    <div class="stat"><div class="label">剩余</div><b id="pairs">24</b></div>
+    <div class="stat"><div class="label">时间</div><b id="time">00:00</b></div>
+  </div>
+  <div class="controls">
+    <button id="hintBtn">💡 提示 ×<span id="hintLeft">3</span></button>
+    <button id="shuffleBtn">🔀 洗牌</button>
+    <button id="restartBtn">↻ 重开</button>
+    <button id="soundBtn" title="音效开关">🔊</button>
+  </div>
+</header>
+
+<div id="boardWrap">
+  <div id="grid"></div>
+  <canvas id="pathCanvas"></canvas>
+  <div id="overlay">
+    <div class="win-card">
+      <h2 id="winTitle">全 部 消 除 ！</h2>
+      <p>用时 <b id="winTime">--</b> · 得分 <b id="winScore">0</b></p>
+      <p id="winBest">最佳纪录：--</p>
+      <button id="againBtn">再 来 一 局</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="legend">
+    <img src="images/asuka_4.jpg" alt="明日香"> 明日香
+    &nbsp;×&nbsp;
+    <img src="images/rei_3.jpg" alt="绫波丽"> 绫波丽
+  </div>
+  点击两张相同的图片，若能用不超过 2 个拐点的线连通（可绕棋盘外侧）即可消除
+</footer>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= 配置 ================= */
+const ROWS = 6, COLS = 8;              // 48 张牌
+const PAIRS_PER_TYPE = 2;              // 每种图案 2 对（4 张）
+const HINTS_MAX = 3;
+const COMBO_WINDOW = 5000;             // 连击时间窗口 ms
+const TYPES = [
+  { id: "rei_1",   char: "rei",   name: "绫波丽" },
+  { id: "rei_2",   char: "rei",   name: "绫波丽" },
+  { id: "rei_3",   char: "rei",   name: "绫波丽" },
+  { id: "rei_4",   char: "rei",   name: "绫波丽" },
+  { id: "rei_5",   char: "rei",   name: "绫波丽" },
+  { id: "rei_6",   char: "rei",   name: "绫波丽" },
+  { id: "asuka_1", char: "asuka", name: "明日香" },
+  { id: "asuka_2", char: "asuka", name: "明日香" },
+  { id: "asuka_3", char: "asuka", name: "明日香" },
+  { id: "asuka_4", char: "asuka", name: "明日香" },
+  { id: "asuka_5", char: "asuka", name: "明日香" },
+  { id: "asuka_6", char: "asuka", name: "明日香" },
+];
+
+/* ================= 状态 ================= */
+let grid = [];            // 长度 ROWS*COLS，值为 TYPES 下标或 null
+let tiles = [];           // DOM 按钮，下标即位置
+let selected = null;      // {r,c}
+let score = 0, combo = 0, lastMatchAt = 0;
+let hintsLeft = HINTS_MAX;
+let seconds = 0, timerId = null;
+let soundOn = true;
+let cell = 90, GAP = 7, PAD = 30;      // 布局尺寸（JS 计算）
+let audioCtx = null;
+
+const $ = (id) => document.getElementById(id);
+const gridEl = $("grid"), wrapEl = $("boardWrap"), canvas = $("pathCanvas");
+const ctx2d = canvas.getContext("2d");
+
+const idx = (r, c) => r * COLS + c;
+const inBoard = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
+const emptyAt = (r, c) => !inBoard(r, c) || grid[idx(r, c)] === null;
+
+/* ================= 连通判定（经典三情况） ================= */
+function clearBetween(r1, c1, r2, c2) {  // 两端点之间的格子必须全空（不含端点）
+  if (r1 === r2) {
+    const a = Math.min(c1, c2), b = Math.max(c1, c2);
+    for (let c = a + 1; c < b; c++) if (!emptyAt(r1, c)) return false;
+    return true;
+  }
+  if (c1 === c2) {
+    const a = Math.min(r1, r2), b = Math.max(r1, r2);
+    for (let r = a + 1; r < b; r++) if (!emptyAt(r, c1)) return false;
+    return true;
+  }
+  return false;
+}
+
+// 返回拐点数组（不含起终点）；不可连通返回 null
+function findPath(a, b) {
+  // 0 拐点
+  if ((a.r === b.r || a.c === b.c) && clearBetween(a.r, a.c, b.r, b.c)) return [];
+  // 1 拐点
+  const p1 = { r: a.r, c: b.c }, p2 = { r: b.r, c: a.c };
+  if (emptyAt(p1.r, p1.c) && clearBetween(a.r, a.c, p1.r, p1.c) && clearBetween(p1.r, p1.c, b.r, b.c)) return [p1];
+  if (emptyAt(p2.r, p2.c) && clearBetween(a.r, a.c, p2.r, p2.c) && clearBetween(p2.r, p2.c, b.r, b.c)) return [p2];
+  // 2 拐点：竖扫（拐角列 x）+ 横扫（拐角行 y），范围含棋盘外圈
+  for (let x = -1; x <= COLS; x++) {
+    if (x === a.c || x === b.c) continue;
+    const p = { r: a.r, c: x }, q = { r: b.r, c: x };
+    if (emptyAt(p.r, p.c) && emptyAt(q.r, q.c)
+      && clearBetween(a.r, a.c, p.r, p.c)
+      && clearBetween(p.r, p.c, q.r, q.c)
+      && clearBetween(q.r, q.c, b.r, b.c)) return [p, q];
+  }
+  for (let y = -1; y <= ROWS; y++) {
+    if (y === a.r || y === b.r) continue;
+    const p = { r: y, c: a.c }, q = { r: y, c: b.c };
+    if (emptyAt(p.r, p.c) && emptyAt(q.r, q.c)
+      && clearBetween(a.r, a.c, p.r, p.c)
+      && clearBetween(p.r, p.c, q.r, q.c)
+      && clearBetween(q.r, q.c, b.r, b.c)) return [p, q];
+  }
+  return null;
+}
+
+function findAnyPair() {
+  const byType = {};
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const t = grid[idx(r, c)];
+    if (t === null) continue;
+    (byType[t] ??= []).push({ r, c });
+  }
+  for (const t in byType) {
+    const ps = byType[t];
+    for (let i = 0; i < ps.length; i++)
+      for (let j = i + 1; j < ps.length; j++)
+        if (findPath(ps[i], ps[j])) return [ps[i], ps[j]];
+  }
+  return null;
+}
+
+/* ================= 发牌（保证全程可解） ================= */
+function shuffled(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function simulateSolvable(types) {
+  const saved = grid;
+  grid = types.slice();
+  let removed = 0, ok = true;
+  while (true) {
+    const p = findAnyPair();
+    if (!p) { ok = removed === ROWS * COLS; break; }
+    grid[idx(p[0].r, p[0].c)] = null;
+    grid[idx(p[1].r, p[1].c)] = null;
+    removed += 2;
+  }
+  grid = saved;
+  return ok;
+}
+
+function deal() {
+  const base = [];
+  TYPES.forEach((_, i) => { for (let k = 0; k < PAIRS_PER_TYPE; k++) base.push(i); });
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const t = shuffled(base);
+    if (simulateSolvable(t)) { grid = t.slice(); return; }
+  }
+  grid = shuffled(base); // 理论上到不了这里
+}
+
+function shuffleRemaining() {
+  const pos = [], vals = [];
+  for (let i = 0; i < grid.length; i++) if (grid[i] !== null) { pos.push(i); vals.push(grid[i]); }
+  if (pos.length === 0) return true;
+  for (let attempt = 0; attempt < 400; attempt++) {
+    const t = shuffled(vals);
+    pos.forEach((p, k) => { grid[p] = t[k]; });
+    if (findAnyPair()) return true;
+  }
+  return false;
+}
+
+/* ================= 渲染 ================= */
+function buildTiles() {
+  gridEl.innerHTML = "";
+  tiles = [];
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    const btn = document.createElement("button");
+    btn.className = "tile";
+    btn.dataset.r = r; btn.dataset.c = c;
+    btn.addEventListener("click", () => onTileClick(r, c));
+    gridEl.appendChild(btn);
+    tiles.push(btn);
+  }
+}
+
+function paintTile(i) {
+  const btn = tiles[i], t = grid[i];
+  btn.classList.remove("removed", "selected", "hinted", "wrong");
+  btn.innerHTML = "";
+  if (t === null) { btn.classList.add("removed"); return; }
+  const type = TYPES[t];
+  btn.classList.add(type.char);
+  const img = document.createElement("img");
+  img.src = `images/${type.id}.jpg`;
+  img.alt = type.name;
+  img.draggable = false;
+  btn.appendChild(img);
+}
+
+function paintAll() { for (let i = 0; i < grid.length; i++) paintTile(i); }
+
+function layout() {
+  const availW = Math.min(window.innerWidth - 20, 960);
+  const headerH = document.querySelector("header").offsetHeight;
+  const availH = window.innerHeight - headerH - 110;
+  const cw = Math.floor((availW - (COLS - 1) * GAP) / COLS) - 12;
+  const ch = Math.floor((availH - (ROWS - 1) * GAP) / ROWS) - 12;
+  cell = Math.max(44, Math.min(104, cw, ch));
+  PAD = Math.round(cell * 0.55);
+  document.documentElement.style.setProperty("--cell", cell + "px");
+  document.documentElement.style.setProperty("--gap", GAP + "px");
+  const W = PAD * 2 + COLS * cell + (COLS - 1) * GAP;
+  const H = PAD * 2 + ROWS * cell + (ROWS - 1) * GAP;
+  wrapEl.style.width = W + "px";
+  wrapEl.style.height = H + "px";
+  gridEl.style.left = PAD + "px";
+  gridEl.style.top = PAD + "px";
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + "px"; canvas.style.height = H + "px";
+  ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+const center = (r, c) => ({
+  x: PAD + c * (cell + GAP) + cell / 2,
+  y: PAD + r * (cell + GAP) + cell / 2,
+});
+
+/* ================= 路径动画 ================= */
+let pathAnimId = null;
+function drawPath(a, b, corners) {
+  if (pathAnimId) cancelAnimationFrame(pathAnimId);
+  const pts = [center(a.r, a.c), ...corners.map(p => center(p.r, p.c)), center(b.r, b.c)];
+  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  const grad = ctx2d.createLinearGradient(pts[0].x, pts[0].y, pts[pts.length - 1].x, pts[pts.length - 1].y);
+  grad.addColorStop(0, "#58b6ff");
+  grad.addColorStop(1, "#ff6a3d");
+  const lw = Math.max(4, cell * 0.11);
+  const t0 = performance.now(), DASH = 3000, DRAW_MS = 130, FADE_MS = 380;
+  ctx2d.lineJoin = "round"; ctx2d.lineCap = "round";
+  function frame(now) {
+    const el = now - t0;
+    ctx2d.clearRect(0, 0, W / dpr, H / dpr);
+    if (el > DRAW_MS + FADE_MS) { pathAnimId = null; return; }
+    let alpha = 1;
+    if (el > DRAW_MS) alpha = 1 - (el - DRAW_MS) / FADE_MS;
+    let progress = Math.min(1, el / DRAW_MS);
+    const totalLen = (pts.length - 1) * 1000 * progress;
+    ctx2d.save();
+    ctx2d.globalAlpha = alpha;
+    ctx2d.strokeStyle = grad;
+    ctx2d.lineWidth = lw;
+    ctx2d.shadowColor = "#c9a6ff";
+    ctx2d.shadowBlur = cell * 0.3;
+    ctx2d.setLineDash([totalLen, DASH]);
+    ctx2d.beginPath();
+    ctx2d.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx2d.lineTo(pts[i].x, pts[i].y);
+    ctx2d.stroke();
+    pts.forEach(p => { // 拐点圆点
+      ctx2d.setLineDash([]);
+      ctx2d.beginPath();
+      ctx2d.arc(p.x, p.y, lw * 0.75, 0, Math.PI * 2);
+      ctx2d.fillStyle = "#fff";
+      ctx2d.fill();
+    });
+    ctx2d.restore();
+    pathAnimId = requestAnimationFrame(frame);
+  }
+  pathAnimId = requestAnimationFrame(frame);
+}
+
+/* ================= 音效（WebAudio 合成） ================= */
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(freq, dur, type = "sine", gain = 0.12, delay = 0) {
+  if (!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+const sndSelect = () => beep(660, 0.06, "triangle", 0.09);
+const sndMatch  = () => { beep(523.25, 0.1, "sine", 0.14); beep(783.99, 0.12, "sine", 0.14, 0.07); };
+const sndFail   = () => beep(150, 0.14, "sawtooth", 0.07);
+const sndShuffle= () => { beep(320, 0.06, "square", 0.06); beep(420, 0.06, "square", 0.06, 0.07); };
+const sndWin    = () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => beep(f, 0.16, "sine", 0.15, i * 0.11));
+
+/* ================= 游戏流程 ================= */
+function onTileClick(r, c) {
+  ensureAudio();
+  if (grid[idx(r, c)] === null) return;
+  const pos = { r, c };
+  if (selected && selected.r === r && selected.c === c) {
+    tiles[idx(r, c)].classList.remove("selected");
+    selected = null;
+    return;
+  }
+  if (!selected) {
+    selected = pos;
+    tiles[idx(r, c)].classList.add("selected");
+    sndSelect();
+    return;
+  }
+  const a = selected, b = pos;
+  const ta = grid[idx(a.r, a.c)], tb = grid[idx(b.r, b.c)];
+  tiles[idx(a.r, a.c)].classList.remove("selected");
+  selected = null;
+
+  if (ta !== tb) { // 图案不同：切换选中到新牌
+    tiles[idx(b.r, b.c)].classList.add("wrong");
+    setTimeout(() => tiles[idx(b.r, b.c)].classList.remove("wrong"), 340);
+    selected = b;
+    tiles[idx(b.r, b.c)].classList.add("selected");
+    sndFail();
+    return;
+  }
+  const path = findPath(a, b);
+  if (!path) { // 同图案但连不通
+    tiles[idx(a.r, a.c)].classList.add("wrong");
+    tiles[idx(b.r, b.c)].classList.add("wrong");
+    setTimeout(() => {
+      tiles[idx(a.r, a.c)].classList.remove("wrong");
+      tiles[idx(b.r, b.c)].classList.remove("wrong");
+    }, 340);
+    selected = b;
+    tiles[idx(b.r, b.c)].classList.add("selected");
+    sndFail();
+    return;
+  }
+  // 消除！
+  grid[idx(a.r, a.c)] = null;
+  grid[idx(b.r, b.c)] = null;
+  tiles[idx(a.r, a.c)].classList.remove("selected");
+  paintTile(idx(a.r, a.c));
+  paintTile(idx(b.r, b.c));
+  drawPath(a, b, path);
+  sndMatch();
+  const now = Date.now();
+  combo = (now - lastMatchAt <= COMBO_WINDOW) ? combo + 1 : 1;
+  lastMatchAt = now;
+  const gain = 10 * combo;
+  score += gain;
+  const mid = path.length
+    ? center(path[0].r, path[0].c)
+    : center((a.r + b.r) / 2, (a.c + b.c) / 2);
+  popScore(mid.x, mid.y, combo > 1 ? `+${gain} ×${combo}` : `+${gain}`);
+  updateHUD();
+
+  const left = countRemaining();
+  if (left === 0) { win(); return; }
+  if (!findAnyPair()) {
+    toast("没有可消除的配对了，自动洗牌 ↻");
+    setTimeout(() => { shuffleRemaining(); paintAll(); sndShuffle(); }, 480);
+  }
+}
+
+function countRemaining() {
+  let n = 0;
+  for (const v of grid) if (v !== null) n++;
+  return n;
+}
+
+function popScore(x, y, text) {
+  const el = document.createElement("div");
+  el.className = "score-pop";
+  el.textContent = text;
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+  wrapEl.appendChild(el);
+  setTimeout(() => el.remove(), 820);
+}
+
+function updateHUD() {
+  $("score").textContent = score;
+  const comboEl = $("combo");
+  comboEl.textContent = combo > 1 ? "×" + combo : "—";
+  comboEl.classList.toggle("burning", combo > 1);
+  $("pairs").textContent = countRemaining() / 2;
+  $("hintLeft").textContent = hintsLeft;
+  $("hintBtn").disabled = hintsLeft <= 0;
+}
+
+function fmtTime(s) {
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+function startTimer() {
+  stopTimer();
+  timerId = setInterval(() => { seconds++; $("time").textContent = fmtTime(seconds); }, 1000);
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+function win() {
+  stopTimer();
+  sndWin();
+  const bestKey = "eva_lianliankan_best";
+  let best = Number(localStorage.getItem(bestKey) || 0);
+  let bestText = "最佳纪录：--";
+  if (!best || seconds < best) {
+    localStorage.setItem(bestKey, seconds);
+    bestText = "🎉 新纪录！最佳用时 " + fmtTime(seconds);
+  } else {
+    bestText = "最佳纪录：" + fmtTime(best);
+  }
+  $("winTime").textContent = fmtTime(seconds);
+  $("winScore").textContent = score;
+  $("winBest").textContent = bestText;
+  $("overlay").classList.add("show");
+}
+
+function newGame() {
+  deal();
+  selected = null;
+  score = 0; combo = 0; lastMatchAt = 0;
+  hintsLeft = HINTS_MAX;
+  seconds = 0;
+  $("time").textContent = "00:00";
+  $("overlay").classList.remove("show");
+  layout();
+  paintAll();
+  updateHUD();
+  startTimer();
+}
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ================= 按钮事件 ================= */
+$("hintBtn").addEventListener("click", () => {
+  ensureAudio();
+  if (hintsLeft <= 0) return;
+  const p = findAnyPair();
+  if (!p) { toast("没有可消除的配对，试试洗牌"); return; }
+  hintsLeft--;
+  updateHUD();
+  [p[0], p[1]].forEach(pos => {
+    const el = tiles[idx(pos.r, pos.c)];
+    el.classList.remove("hinted");
+    void el.offsetWidth; // 重启动画
+    el.classList.add("hinted");
+    setTimeout(() => el.classList.remove("hinted"), 2200);
+  });
+  beep(880, 0.08, "sine", 0.1);
+});
+
+$("shuffleBtn").addEventListener("click", () => {
+  ensureAudio();
+  shuffleRemaining();
+  selected = null;
+  combo = 0;
+  paintAll();
+  updateHUD();
+  sndShuffle();
+  toast("已重新洗牌");
+});
+
+$("restartBtn").addEventListener("click", () => { ensureAudio(); newGame(); toast("新的一局开始！"); });
+$("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("soundBtn").addEventListener("click", function () {
+  soundOn = !soundOn;
+  this.textContent = soundOn ? "🔊" : "🔇";
+  if (soundOn) { ensureAudio(); beep(660, 0.06, "sine", 0.1); }
+});
+document.addEventListener("pointerdown", ensureAudio, { once: true });
+window.addEventListener("resize", () => { layout(); });
+
+buildTiles();
+newGame();
+</script>
+</body>
+</html>

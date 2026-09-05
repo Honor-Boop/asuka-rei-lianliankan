@@ -1,0 +1,8 @@
+# 中间产物与本地文件不入库
+candidates/
+docs/*.tmp
+wallpapers/_sheet.png
+scripts/__pycache__/
+*.log
+.DS_Store
+Thumbs.db
