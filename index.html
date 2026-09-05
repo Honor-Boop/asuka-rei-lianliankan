@@ -14,6 +14,9 @@
     --rei: #58b6ff;
     --asuka: #ff6a3d;
     --gold: #ffd54a;
+    --eva-green: #58ffa3;
+    --eva-red: #ff5a3c;
+    --eva-purple: #7b5cff;
     --text: #ece8f7;
     --text-dim: #9a92b8;
   }
@@ -41,7 +44,7 @@
     max-width: 980px;
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
     flex-wrap: wrap;
     padding: 6px 6px 12px;
   }
@@ -60,6 +63,11 @@
   }
   .logo small { font-size: 17px; letter-spacing: 6px; }
   .subtitle { font-size: 12px; color: var(--text-dim); letter-spacing: 3px; margin-top: 3px; }
+  .diff-tag {
+    font-size: 11px; letter-spacing: 2px; color: var(--gold);
+    border: 1px solid rgba(255, 213, 74, 0.45); border-radius: 6px;
+    padding: 2px 8px; margin-top: 5px; align-self: flex-start;
+  }
 
   .stats {
     display: flex;
@@ -78,6 +86,9 @@
   .stat .label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
   .stat b { font-size: 17px; font-variant-numeric: tabular-nums; }
   #combo.burning { color: var(--gold); text-shadow: 0 0 10px rgba(255, 213, 74, 0.7); }
+  #time.danger { color: var(--eva-red); text-shadow: 0 0 10px rgba(255, 90, 60, 0.7); animation: pulse .8s ease-in-out infinite; }
+  #time.gain { color: var(--eva-green); text-shadow: 0 0 10px rgba(88, 255, 163, 0.7); }
+  @keyframes pulse { 50% { opacity: 0.55; } }
 
   .controls { display: flex; gap: 8px; flex-wrap: wrap; }
   .controls button {
@@ -100,7 +111,6 @@
     position: absolute;
     display: grid;
     gap: var(--gap);
-    grid-template-columns: repeat(8, var(--cell));
   }
   .tile {
     width: var(--cell);
@@ -156,75 +166,129 @@
     z-index: 5;
   }
 
-  /* ---------- overlay / toast ---------- */
+  /* ---------- 难度选择 ---------- */
+  .modal {
+    position: fixed; inset: 0; z-index: 60;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(8, 5, 18, 0.78);
+    backdrop-filter: blur(8px);
+  }
+  .modal.show { display: flex; }
+  .diff-card {
+    text-align: center;
+    background: rgba(20, 14, 36, 0.85);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 30px 38px;
+    max-width: 640px;
+    box-shadow: 0 10px 60px rgba(0,0,0,0.65);
+  }
+  .diff-title { font-size: 24px; font-weight: 900; font-style: italic; letter-spacing: 3px; }
+  .diff-title span { font-size: 12px; color: var(--text-dim); letter-spacing: 4px; margin-left: 10px; font-style: normal; }
+  .diff-sub { font-size: 13px; color: var(--text-dim); margin: 8px 0 20px; }
+  .diff-list { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .diff-opt {
+    font-family: inherit; color: var(--text); cursor: pointer;
+    width: 168px; padding: 16px 12px;
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px;
+    display: flex; flex-direction: column; gap: 7px; align-items: center;
+    transition: all 0.16s;
+  }
+  .diff-opt b { font-size: 17px; letter-spacing: 2px; }
+  .diff-opt span { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .diff-opt em { font-style: normal; font-size: 12px; color: var(--gold); }
+  .diff-opt:hover { transform: translateY(-4px); }
+  .diff-opt[data-d="trainee"] b { color: var(--eva-green); }
+  .diff-opt[data-d="trainee"]:hover { border-color: rgba(88,255,163,.6); box-shadow: 0 0 18px rgba(88,255,163,.25); }
+  .diff-opt[data-d="agent"] b { color: var(--rei); }
+  .diff-opt[data-d="agent"]:hover { border-color: rgba(88,182,255,.6); box-shadow: 0 0 18px rgba(88,182,255,.25); }
+  .diff-opt[data-d="angel"] b { color: var(--eva-red); }
+  .diff-opt[data-d="angel"]:hover { border-color: rgba(255,90,60,.6); box-shadow: 0 0 18px rgba(255,90,60,.3); }
+  #diffCancel { margin-top: 18px; }
+
+  /* ---------- 结果 / 战绩 弹窗 ---------- */
   #overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    display: none;
-    align-items: center;
-    justify-content: center;
+    position: absolute; inset: 0; z-index: 10;
+    display: none; align-items: center; justify-content: center;
     background: rgba(10, 6, 20, 0.72);
     backdrop-filter: blur(6px);
     border-radius: 14px;
   }
   #overlay.show { display: flex; }
+  #historyOverlay {
+    position: fixed; inset: 0; z-index: 65;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(8, 5, 18, 0.8);
+    backdrop-filter: blur(8px);
+  }
+  #historyOverlay.show { display: flex; }
   .win-card {
     text-align: center;
-    background: var(--panel);
+    background: rgba(20, 14, 36, 0.9);
     border: 1px solid var(--panel-border);
     border-radius: 18px;
     padding: 30px 44px;
     box-shadow: 0 10px 60px rgba(0,0,0,0.6);
   }
   .win-card h2 {
-    font-size: 26px;
+    font-size: 25px;
     font-style: italic;
     letter-spacing: 2px;
-    background: linear-gradient(90deg, var(--rei), var(--asuka));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
     margin-bottom: 10px;
   }
+  .win-card h2.win { background: linear-gradient(90deg, var(--rei), var(--asuka)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .win-card h2.lose { color: var(--eva-red); text-shadow: 0 0 16px rgba(255,90,60,.5); }
+  .win-card .msg { font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
   .win-card p { color: var(--text-dim); font-size: 14px; margin: 4px 0; }
   .win-card p b { color: var(--gold); }
+  .win-card .btns { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
   .win-card button {
-    margin-top: 16px;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #14101f;
     background: linear-gradient(90deg, var(--rei), var(--asuka));
-    border: none;
-    border-radius: 10px;
-    padding: 10px 26px;
-    cursor: pointer;
+    border: none; border-radius: 10px;
+    padding: 10px 24px; cursor: pointer;
   }
+  .win-card button.ghost {
+    background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); font-weight: 400;
+  }
+  .win-card button:hover { filter: brightness(1.12); }
+
+  .history-card { max-width: 560px; width: calc(100vw - 60px); }
+  .hist-list {
+    max-height: 46vh; overflow-y: auto; margin: 12px 0 4px; text-align: left;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .hist-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 9px; padding: 7px 11px; font-size: 12.5px;
+  }
+  .hist-row .res { font-weight: 700; border-radius: 6px; padding: 2px 8px; font-size: 11px; }
+  .hist-row .res.w { color: var(--eva-green); border: 1px solid rgba(88,255,163,.5); background: rgba(88,255,163,.08); }
+  .hist-row .res.l { color: var(--eva-red); border: 1px solid rgba(255,90,60,.5); background: rgba(255,90,60,.08); }
+  .hist-row .dname { color: var(--text); }
+  .hist-row .num { margin-left: auto; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .hist-row .dim { color: var(--text-dim); font-size: 11px; }
+  .hist-empty { color: var(--text-dim); font-size: 13px; padding: 26px 0; }
+  .hist-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
+
   #toast {
-    position: fixed;
-    left: 50%;
-    bottom: 34px;
+    position: fixed; left: 50%; bottom: 34px;
     transform: translateX(-50%) translateY(20px);
     background: rgba(20, 14, 36, 0.92);
     border: 1px solid var(--panel-border);
     color: var(--text);
-    padding: 9px 18px;
-    border-radius: 10px;
-    font-size: 14px;
-    opacity: 0;
-    transition: all 0.25s;
-    z-index: 99;
-    pointer-events: none;
+    padding: 9px 18px; border-radius: 10px; font-size: 14px;
+    opacity: 0; transition: all 0.25s; z-index: 99; pointer-events: none;
   }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   .score-pop {
-    position: absolute;
-    z-index: 8;
-    font-weight: 900;
-    font-size: 18px;
-    color: var(--gold);
+    position: absolute; z-index: 8;
+    font-weight: 900; font-size: 18px; color: var(--gold);
     text-shadow: 0 0 12px rgba(255, 213, 74, 0.8);
     pointer-events: none;
     animation: popUp 0.8s ease-out forwards;
@@ -233,6 +297,26 @@
     0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
     25% { transform: translate(-50%, -10px) scale(1.15); opacity: 1; }
     100% { transform: translate(-50%, -42px) scale(1); opacity: 0; }
+  }
+
+  /* ---------- 通关特效 ---------- */
+  #fxCanvas { position: fixed; inset: 0; z-index: 70; pointer-events: none; display: none; }
+  #fxCanvas.on { display: block; }
+  #fxFlash { position: fixed; inset: 0; z-index: 69; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle at 50% 45%, rgba(255, 179, 0, 0.85), rgba(255, 106, 61, 0.4) 55%, transparent 80%); }
+  #fxFlash.go { animation: flashOut 0.9s ease-out forwards; }
+  @keyframes flashOut { 0% { opacity: 0; } 18% { opacity: 0.9; } 100% { opacity: 0; } }
+  .omedeto {
+    position: fixed; z-index: 71; pointer-events: none;
+    font-weight: 900; font-style: italic; color: #fff;
+    text-shadow: 0 0 14px rgba(255, 213, 74, 0.9), 0 0 30px rgba(255, 106, 61, 0.6);
+    opacity: 0; animation: fxText 2.4s ease-out forwards;
+  }
+  @keyframes fxText {
+    0% { opacity: 0; transform: scale(0.4) rotate(var(--r)); }
+    15% { opacity: 1; transform: scale(1.1) rotate(var(--r)); }
+    70% { opacity: 1; transform: scale(1) rotate(var(--r)); }
+    100% { opacity: 0; transform: scale(1) rotate(var(--r)) translateY(-34px); }
   }
 
   footer {
@@ -262,17 +346,20 @@
   <div class="brand">
     <div class="logo">EVA <small>连连看</small></div>
     <div class="subtitle">明日香 × 绫波丽 · LIANLIANKAN</div>
+    <div class="diff-tag" id="diffTag">未选择难度</div>
   </div>
   <div class="stats">
     <div class="stat"><div class="label">得分</div><b id="score">0</b></div>
     <div class="stat"><div class="label">连击</div><b id="combo">—</b></div>
-    <div class="stat"><div class="label">剩余</div><b id="pairs">24</b></div>
-    <div class="stat"><div class="label">时间</div><b id="time">00:00</b></div>
+    <div class="stat"><div class="label">剩余</div><b id="pairs">--</b></div>
+    <div class="stat"><div class="label">剩余时间</div><b id="time">--:--</b></div>
   </div>
   <div class="controls">
     <button id="hintBtn">💡 提示 ×<span id="hintLeft">3</span></button>
     <button id="shuffleBtn">🔀 洗牌</button>
     <button id="restartBtn">↻ 重开</button>
+    <button id="diffBtn">⚙ 难度</button>
+    <button id="histBtn">📊 战绩</button>
     <button id="bgBtn" title="切换下一张背景壁纸">🖼 换背景</button>
     <button id="soundBtn" title="音效开关">🔊</button>
   </div>
@@ -283,11 +370,53 @@
   <canvas id="pathCanvas"></canvas>
   <div id="overlay">
     <div class="win-card">
-      <h2 id="winTitle">全 部 消 除 ！</h2>
-      <p>用时 <b id="winTime">--</b> · 得分 <b id="winScore">0</b></p>
-      <p id="winBest">最佳纪录：--</p>
-      <button id="againBtn">再 来 一 局</button>
+      <h2 id="resTitle">全 部 消 除 ！</h2>
+      <div class="msg" id="resMsg"></div>
+      <p id="resStats">用时 -- · 得分 0</p>
+      <p id="resBest"></p>
+      <div class="btns">
+        <button id="againBtn">再 来 一 局</button>
+        <button id="diffBtn2" class="ghost">更换难度</button>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- 战绩（全屏） -->
+<div id="historyOverlay">
+  <div class="win-card history-card">
+    <h2 class="win" style="color:var(--gold);-webkit-text-fill-color:var(--gold)">作戦記録 · 战绩</h2>
+    <div class="hist-list" id="histList"></div>
+    <div class="hist-actions">
+      <button id="histClear" class="ghost">清空记录</button>
+      <button id="histClose">关 闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 难度选择（全屏） -->
+<div id="diffOverlay" class="modal">
+  <div class="diff-card">
+    <div class="diff-title">作戦選択 <span>SELECT DIFFICULTY</span></div>
+    <div class="diff-sub">选择作战难度，开始补完计划。每次消除可回收 +3 秒反应时间。</div>
+    <div class="diff-list">
+      <button class="diff-opt" data-d="trainee">
+        <b>見習い訓練</b>
+        <span>6×4 棋盘 · 24 张牌<br>6 种图案</span>
+        <em>时限 120 秒</em>
+      </button>
+      <button class="diff-opt" data-d="agent">
+        <b>正規隊員</b>
+        <span>8×6 棋盘 · 48 张牌<br>12 种图案</span>
+        <em>时限 300 秒</em>
+      </button>
+      <button class="diff-opt" data-d="angel">
+        <b>使徒級</b>
+        <span>10×8 棋盘 · 80 张牌<br>8 种图案 · 大量重复</span>
+        <em>时限 540 秒</em>
+      </button>
+    </div>
+    <button id="diffCancel" class="diff-opt hidden" style="display:none;width:auto;padding:8px 22px;font-size:12px">返回当前对局</button>
   </div>
 </div>
 
@@ -299,10 +428,12 @@
     &nbsp;·&nbsp;
     <a href="gallery.html" style="color:#9a92b8">🖼 壁纸图库</a>
   </div>
-  点击两张相同的图片，若能用不超过 2 个拐点的线连通（可绕棋盘外侧）即可消除
+  点击两张相同的图片，若能用不超过 2 个拐点的线连通（可绕棋盘外侧）即可消除 · 消除 +3 秒
 </footer>
 
 <div id="toast"></div>
+<div id="fxFlash"></div>
+<canvas id="fxCanvas"></canvas>
 
 <script src="wallpapers/manifest.js"></script>
 <script src="background.js"></script>
@@ -312,8 +443,12 @@
 "use strict";
 
 /* ================= 配置 ================= */
-const ROWS = 6, COLS = 8;              // 48 张牌
-const PAIRS_PER_TYPE = 2;              // 每种图案 2 对（4 张）
+const DIFFS = {
+  trainee: { name: "見習い訓練", cols: 6,  rows: 4, types: 6,  time: 120, tag: "EVA-04" },
+  agent:   { name: "正規隊員",   cols: 8,  rows: 6, types: 12, time: 300, tag: "EVA-01" },
+  angel:   { name: "使徒級",     cols: 10, rows: 8, types: 8,  time: 540, tag: "EVA-02" },
+};
+const BONUS_PER_MATCH = 3;             // 每次消除回收的秒数
 const HINTS_MAX = 3;
 const COMBO_WINDOW = 5000;             // 连击时间窗口 ms
 const TYPES = [
@@ -332,13 +467,17 @@ const TYPES = [
 ];
 
 /* ================= 状态 ================= */
-let grid = [];            // 长度 ROWS*COLS，值为 TYPES 下标或 null
-let tiles = [];           // DOM 按钮，下标即位置
-let selected = null;      // {r,c}
+let COLS = 8, ROWS = 6;                // 由难度决定
+let typePool = TYPES.map((_, i) => i); // 本局使用的图案
+let pairsPerType = 2;
+let grid = [];
+let tiles = [];
+let selected = null;
 let score = 0, combo = 0, lastMatchAt = 0;
 let hintsLeft = HINTS_MAX;
-let seconds = 0, timerId = null;
+let timeLeft = 0, timerId = null, over = false;
 let soundOn = true;
+let diffKey = null;
 let cell = 90, GAP = 7, PAD = 30;      // 布局尺寸（JS 计算）
 let audioCtx = null;
 
@@ -351,7 +490,7 @@ const inBoard = (r, c) => r >= 0 && r < ROWS && c >= 0 && c < COLS;
 const emptyAt = (r, c) => !inBoard(r, c) || grid[idx(r, c)] === null;
 
 /* ================= 连通判定（经典三情况） ================= */
-function clearBetween(r1, c1, r2, c2) {  // 两端点之间的格子必须全空（不含端点）
+function clearBetween(r1, c1, r2, c2) {
   if (r1 === r2) {
     const a = Math.min(c1, c2), b = Math.max(c1, c2);
     for (let c = a + 1; c < b; c++) if (!emptyAt(r1, c)) return false;
@@ -365,15 +504,11 @@ function clearBetween(r1, c1, r2, c2) {  // 两端点之间的格子必须全空
   return false;
 }
 
-// 返回拐点数组（不含起终点）；不可连通返回 null
 function findPath(a, b) {
-  // 0 拐点
   if ((a.r === b.r || a.c === b.c) && clearBetween(a.r, a.c, b.r, b.c)) return [];
-  // 1 拐点
   const p1 = { r: a.r, c: b.c }, p2 = { r: b.r, c: a.c };
   if (emptyAt(p1.r, p1.c) && clearBetween(a.r, a.c, p1.r, p1.c) && clearBetween(p1.r, p1.c, b.r, b.c)) return [p1];
   if (emptyAt(p2.r, p2.c) && clearBetween(a.r, a.c, p2.r, p2.c) && clearBetween(p2.r, p2.c, b.r, b.c)) return [p2];
-  // 2 拐点：竖扫（拐角列 x）+ 横扫（拐角行 y），范围含棋盘外圈
   for (let x = -1; x <= COLS; x++) {
     if (x === a.c || x === b.c) continue;
     const p = { r: a.r, c: x }, q = { r: b.r, c: x };
@@ -436,12 +571,12 @@ function simulateSolvable(types) {
 
 function deal() {
   const base = [];
-  TYPES.forEach((_, i) => { for (let k = 0; k < PAIRS_PER_TYPE * 2; k++) base.push(i); });
+  typePool.forEach(t => { for (let k = 0; k < pairsPerType * 2; k++) base.push(t); });
   for (let attempt = 0; attempt < 300; attempt++) {
     const t = shuffled(base);
     if (simulateSolvable(t)) { grid = t.slice(); return; }
   }
-  grid = shuffled(base); // 理论上到不了这里
+  grid = shuffled(base);
 }
 
 function shuffleRemaining() {
@@ -463,7 +598,6 @@ function buildTiles() {
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
     const btn = document.createElement("button");
     btn.className = "tile";
-    btn.dataset.r = r; btn.dataset.c = c;
     btn.addEventListener("click", () => onTileClick(r, c));
     gridEl.appendChild(btn);
     tiles.push(btn);
@@ -492,10 +626,11 @@ function layout() {
   const availH = window.innerHeight - headerH - 110;
   const cw = Math.floor((availW - (COLS - 1) * GAP) / COLS) - 12;
   const ch = Math.floor((availH - (ROWS - 1) * GAP) / ROWS) - 12;
-  cell = Math.max(44, Math.min(104, cw, ch));
+  cell = Math.max(30, Math.min(104, cw, ch));
   PAD = Math.round(cell * 0.55);
   document.documentElement.style.setProperty("--cell", cell + "px");
   document.documentElement.style.setProperty("--gap", GAP + "px");
+  gridEl.style.gridTemplateColumns = `repeat(${COLS}, var(--cell))`;
   const W = PAD * 2 + COLS * cell + (COLS - 1) * GAP;
   const H = PAD * 2 + ROWS * cell + (ROWS - 1) * GAP;
   wrapEl.style.width = W + "px";
@@ -532,7 +667,7 @@ function drawPath(a, b, corners) {
     if (el > DRAW_MS + FADE_MS) { pathAnimId = null; return; }
     let alpha = 1;
     if (el > DRAW_MS) alpha = 1 - (el - DRAW_MS) / FADE_MS;
-    let progress = Math.min(1, el / DRAW_MS);
+    const progress = Math.min(1, el / DRAW_MS);
     const totalLen = (pts.length - 1) * 1000 * progress;
     ctx2d.save();
     ctx2d.globalAlpha = alpha;
@@ -545,7 +680,7 @@ function drawPath(a, b, corners) {
     ctx2d.moveTo(pts[0].x, pts[0].y);
     for (let i = 1; i < pts.length; i++) ctx2d.lineTo(pts[i].x, pts[i].y);
     ctx2d.stroke();
-    pts.forEach(p => { // 拐点圆点
+    pts.forEach(p => {
       ctx2d.setLineDash([]);
       ctx2d.beginPath();
       ctx2d.arc(p.x, p.y, lw * 0.75, 0, Math.PI * 2);
@@ -577,12 +712,44 @@ const sndSelect = () => beep(660, 0.06, "triangle", 0.09);
 const sndMatch  = () => { beep(523.25, 0.1, "sine", 0.14); beep(783.99, 0.12, "sine", 0.14, 0.07); };
 const sndFail   = () => beep(150, 0.14, "sawtooth", 0.07);
 const sndShuffle= () => { beep(320, 0.06, "square", 0.06); beep(420, 0.06, "square", 0.06, 0.07); };
-const sndWin    = () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => beep(f, 0.16, "sine", 0.15, i * 0.11));
+const sndTick   = () => beep(1150, 0.035, "square", 0.05);
+const sndWin    = () => [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => beep(f, 0.18, "sine", 0.15, i * 0.12));
+const sndLose   = () => [330, 262, 196].forEach((f, i) => beep(f, 0.22, "sawtooth", 0.09, i * 0.18));
+
+/* ================= 计时（倒计时） ================= */
+function renderTime() {
+  const el = $("time");
+  el.textContent = fmtTime(timeLeft);
+  el.classList.toggle("danger", timeLeft <= 15 && !over);
+}
+function startTimer() {
+  stopTimer();
+  timerId = setInterval(() => {
+    timeLeft--;
+    renderTime();
+    if (timeLeft <= 10 && timeLeft > 0) sndTick();
+    if (timeLeft <= 0) { timeLeft = 0; renderTime(); gameOver(); }
+  }, 1000);
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+function pauseTimer() { stopTimer(); }
+function resumeTimer() { if (!over && timeLeft > 0) startTimer(); }
+function gainTime() {
+  timeLeft += BONUS_PER_MATCH;
+  renderTime();
+  const el = $("time");
+  el.classList.add("gain");
+  setTimeout(() => el.classList.remove("gain"), 450);
+}
+function fmtTime(s) {
+  s = Math.max(0, Math.floor(s));
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
 
 /* ================= 游戏流程 ================= */
 function onTileClick(r, c) {
   ensureAudio();
-  if (grid[idx(r, c)] === null) return;
+  if (over || grid[idx(r, c)] === null) return;
   const pos = { r, c };
   if (selected && selected.r === r && selected.c === c) {
     tiles[idx(r, c)].classList.remove("selected");
@@ -600,7 +767,7 @@ function onTileClick(r, c) {
   tiles[idx(a.r, a.c)].classList.remove("selected");
   selected = null;
 
-  if (ta !== tb) { // 图案不同：切换选中到新牌
+  if (ta !== tb) {
     tiles[idx(b.r, b.c)].classList.add("wrong");
     setTimeout(() => tiles[idx(b.r, b.c)].classList.remove("wrong"), 340);
     selected = b;
@@ -609,7 +776,7 @@ function onTileClick(r, c) {
     return;
   }
   const path = findPath(a, b);
-  if (!path) { // 同图案但连不通
+  if (!path) {
     tiles[idx(a.r, a.c)].classList.add("wrong");
     tiles[idx(b.r, b.c)].classList.add("wrong");
     setTimeout(() => {
@@ -621,7 +788,6 @@ function onTileClick(r, c) {
     sndFail();
     return;
   }
-  // 消除！
   grid[idx(a.r, a.c)] = null;
   grid[idx(b.r, b.c)] = null;
   tiles[idx(a.r, a.c)].classList.remove("selected");
@@ -629,6 +795,7 @@ function onTileClick(r, c) {
   paintTile(idx(b.r, b.c));
   drawPath(a, b, path);
   sndMatch();
+  gainTime();
   const now = Date.now();
   combo = (now - lastMatchAt <= COMBO_WINDOW) ? combo + 1 : 1;
   lastMatchAt = now;
@@ -679,46 +846,191 @@ function updateHUD() {
   }
 }
 
-function fmtTime(s) {
-  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+/* ================= 战绩记录 ================= */
+const HIST_KEY = "eva_llk_history";
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch (e) { return []; }
+}
+function saveRecord(result) {
+  const d = DIFFS[diffKey];
+  const rec = {
+    t: Date.now(), d: diffKey,
+    s: score, u: Math.max(0, d.time - timeLeft),
+    w: result === "win",
+    left: countRemaining() / 2,
+  };
+  const h = loadHistory();
+  h.unshift(rec);
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 60))); } catch (e) {}
 }
 
-function startTimer() {
-  stopTimer();
-  timerId = setInterval(() => { seconds++; $("time").textContent = fmtTime(seconds); }, 1000);
+function renderHistory() {
+  const h = loadHistory();
+  const list = $("histList");
+  if (!h.length) { list.innerHTML = `<div class="hist-empty">暂无记录 · 完成一局作战后在此查看</div>`; return; }
+  list.innerHTML = h.map(r => {
+    const d = DIFFS[r.d] || { name: r.d };
+    const dt = new Date(r.t);
+    const when = `${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+    return `<div class="hist-row">
+      <span class="res ${r.w ? "w" : "l"}">${r.w ? "补完成功" : "作戦失敗"}</span>
+      <span class="dname">${d.name}</span>
+      <span class="dim">${r.w ? "用时 " + fmtTime(r.u) : "剩 " + r.left + " 对"}</span>
+      <span class="num">${r.s} 分</span>
+      <span class="dim">${when}</span>
+    </div>`;
+  }).join("");
 }
-function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
 
-function win() {
-  stopTimer();
-  sndWin();
-  if (window.__decoSyncRate) window.__decoSyncRate(400, true); // EVA-01 觉醒：同步率爆表
-  const bestKey = "eva_lianliankan_best";
-  let best = Number(localStorage.getItem(bestKey) || 0);
-  let bestText = "最佳纪录：--";
-  if (!best || seconds < best) {
-    localStorage.setItem(bestKey, seconds);
-    bestText = "🎉 新纪录！最佳用时 " + fmtTime(seconds);
-  } else {
-    bestText = "最佳纪录：" + fmtTime(best);
-  }
-  $("winTime").textContent = fmtTime(seconds);
-  $("winScore").textContent = score;
-  $("winBest").textContent = bestText;
+/* ================= 结果弹窗 ================= */
+function showResult(title, msg, statsCls, statsHtml, bestHtml) {
+  const h2 = $("resTitle");
+  h2.textContent = title;
+  h2.className = statsCls;
+  $("resMsg").textContent = msg;
+  $("resStats").innerHTML = statsHtml;
+  $("resBest").innerHTML = bestHtml || "";
   $("overlay").classList.add("show");
 }
 
-function newGame() {
+function win() {
+  over = true;
+  stopTimer();
+  sndWin();
+  if (window.__decoSyncRate) window.__decoSyncRate(400, true);
+  saveRecord("win");
+  celebrateFx();
+  const bestKey = "eva_llk_best_" + diffKey;
+  const prev = Number(localStorage.getItem(bestKey) || 0);
+  const used = DIFFS[diffKey].time - timeLeft;
+  let bestHtml;
+  if (!prev || used < prev) {
+    localStorage.setItem(bestKey, used);
+    bestHtml = "🎉 新纪录！该难度最佳用时 " + fmtTime(used);
+  } else {
+    bestHtml = "该难度最佳纪录：" + fmtTime(prev);
+  }
+  showResult("人類補完計画 · 達成",
+    "恭喜，你已成功补全人类。所有的心，就此相互理解。",
+    "win", `用时 <b>${fmtTime(used)}</b> · 得分 <b>${score}</b>`, bestHtml);
+}
+
+function gameOver() {
+  if (over) return;
+  over = true;
+  stopTimer();
+  sndLose();
+  if (window.__decoSyncRate) window.__decoSyncRate(8, false);
+  saveRecord("lose");
+  showResult("作戦失敗",
+    "反应时间耗尽，补完计划被迫中止……",
+    "lose", `得分 <b>${score}</b> · 剩余 <b>${countRemaining() / 2}</b> 对未消除`, "");
+}
+
+/* ================= 通关特效（EVA 元素） ================= */
+const FX_COLORS = ["#ffb300", "#ff6a3d", "#7b5cff", "#58ffa3", "#ffd54a", "#ffffff"];
+let fxRunning = false;
+function celebrateFx() {
+  // 1) A.T. 场全开闪光
+  const flash = $("fxFlash");
+  flash.classList.remove("go");
+  void flash.offsetWidth;
+  flash.classList.add("go");
+  // 2) 六边形 / 三角形粒子喷发
+  const cv = $("fxCanvas");
+  cv.classList.add("on");
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const ctx = cv.getContext("2d");
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  const parts = [];
+  for (let i = 0; i < 150; i++) {
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 4 + Math.random() * 11;
+    parts.push({
+      x: cx, y: cy,
+      vx: Math.cos(ang) * spd,
+      vy: Math.sin(ang) * spd - 5,
+      g: 0.22 + Math.random() * 0.12,
+      s: 5 + Math.random() * 12,
+      rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.25,
+      color: FX_COLORS[(Math.random() * FX_COLORS.length) | 0],
+      shape: ["hex", "tri", "dot"][(Math.random() * 3) | 0],
+      life: 1,
+    });
+  }
+  const t0 = performance.now();
+  fxRunning = true;
+  (function frame(now) {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    let alive = false;
+    for (const p of parts) {
+      p.x += p.vx; p.y += p.vy; p.vy += p.g; p.rot += p.vr;
+      p.life -= 0.007;
+      if (p.life <= 0 || p.y > cv.height + 40) continue;
+      alive = true;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 1.4));
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.shadowColor = p.color; ctx.shadowBlur = 8;
+      ctx.beginPath();
+      if (p.shape === "hex") {
+        for (let k = 0; k < 6; k++) {
+          const a = Math.PI / 3 * k;
+          const px = Math.cos(a) * p.s, py = Math.sin(a) * p.s;
+          k ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        }
+        ctx.closePath();
+      } else if (p.shape === "tri") {
+        ctx.moveTo(0, -p.s); ctx.lineTo(p.s * 0.87, p.s * 0.5); ctx.lineTo(-p.s * 0.87, p.s * 0.5);
+        ctx.closePath();
+      } else {
+        ctx.arc(0, 0, p.s * 0.45, 0, Math.PI * 2);
+      }
+      ctx.fill();
+      ctx.restore();
+    }
+    if (alive && now - t0 < 6500) requestAnimationFrame(frame);
+    else { ctx.clearRect(0, 0, cv.width, cv.height); cv.classList.remove("on"); fxRunning = false; }
+  })(t0);
+  // 3) 经典"おめでとう！"弹幕
+  const texts = ["おめでとう！", "恭喜！", "おめでとう！", "人類補完・達成", "恭喜！"];
+  for (let i = 0; i < 14; i++) {
+    setTimeout(() => {
+      const el = document.createElement("div");
+      el.className = "omedeto";
+      el.textContent = texts[(Math.random() * texts.length) | 0];
+      el.style.left = 4 + Math.random() * 80 + "vw";
+      el.style.top = 8 + Math.random() * 74 + "vh";
+      el.style.fontSize = 16 + Math.random() * 34 + "px";
+      el.style.setProperty("--r", (Math.random() * 44 - 22).toFixed(1) + "deg");
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2500);
+    }, 200 + i * 190);
+  }
+}
+
+/* ================= 新开一局 ================= */
+function newGame(key) {
+  if (key) diffKey = key;
+  const d = DIFFS[diffKey];
+  COLS = d.cols; ROWS = d.rows;
+  // 随机抽取该难度使用的图案
+  typePool = shuffled(TYPES.map((_, i) => i)).slice(0, d.types);
+  pairsPerType = (COLS * ROWS) / (d.types * 2);
+  timeLeft = d.time;
+  over = false;
   deal();
   selected = null;
   score = 0; combo = 0; lastMatchAt = 0;
   hintsLeft = HINTS_MAX;
-  seconds = 0;
-  if (window.__decoSyncRate) window.__decoSyncRate(40.5, false);
-  $("time").textContent = "00:00";
+  $("diffTag").textContent = d.tag + " · " + d.name;
   $("overlay").classList.remove("show");
   layout();
+  buildTiles();
   paintAll();
+  renderTime();
   updateHUD();
   startTimer();
 }
@@ -731,6 +1043,30 @@ function toast(msg) {
   t._tid = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
+/* ================= 难度选择 ================= */
+const diffOverlay = $("diffOverlay");
+let diffOpenedMidGame = false;
+function openDiff(fromGame) {
+  diffOpenedMidGame = !!fromGame;
+  $("diffCancel").style.display = fromGame ? "inline-block" : "none";
+  diffOverlay.classList.add("show");
+  if (fromGame) pauseTimer();
+}
+function closeDiff() {
+  diffOverlay.classList.remove("show");
+  if (diffOpenedMidGame) resumeTimer();
+}
+document.querySelectorAll(".diff-opt[data-d]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    ensureAudio();
+    diffOverlay.classList.remove("show");
+    if (diffOpenedMidGame) { /* 换难度=放弃当前对局 */ }
+    newGame(btn.dataset.d);
+    toast("作战开始：" + DIFFS[btn.dataset.d].name);
+  });
+});
+$("diffCancel").addEventListener("click", closeDiff);
+
 /* ================= 按钮事件 ================= */
 $("hintBtn").addEventListener("click", () => {
   ensureAudio();
@@ -742,7 +1078,7 @@ $("hintBtn").addEventListener("click", () => {
   [p[0], p[1]].forEach(pos => {
     const el = tiles[idx(pos.r, pos.c)];
     el.classList.remove("hinted");
-    void el.offsetWidth; // 重启动画
+    void el.offsetWidth;
     el.classList.add("hinted");
     setTimeout(() => el.classList.remove("hinted"), 2200);
   });
@@ -760,8 +1096,47 @@ $("shuffleBtn").addEventListener("click", () => {
   toast("已重新洗牌");
 });
 
-$("restartBtn").addEventListener("click", () => { ensureAudio(); newGame(); toast("新的一局开始！"); });
+$("restartBtn").addEventListener("click", () => {
+  ensureAudio();
+  newGame();
+  toast("新的一局开始！");
+});
+$("diffBtn").addEventListener("click", () => { ensureAudio(); openDiff(!!diffKey && !over); });
+$("diffBtn2").addEventListener("click", () => {
+  $("overlay").classList.remove("show");
+  over = true; // 结算后打开选择，无需恢复对局
+  openDiff(false);
+});
 $("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+
+/* ---- 战绩 ---- */
+$("histBtn").addEventListener("click", () => {
+  renderHistory();
+  $("historyOverlay").classList.add("show");
+  if (!over && diffKey) pauseTimer();
+});
+$("histClose").addEventListener("click", closeHistory);
+$("historyOverlay").addEventListener("click", e => {
+  if (e.target === $("historyOverlay")) closeHistory();
+});
+function closeHistory() {
+  $("historyOverlay").classList.remove("show");
+  if (!over && diffKey) resumeTimer();
+}
+$("histClear").addEventListener("click", function () {
+  if (this.dataset.arm) {
+    localStorage.removeItem(HIST_KEY);
+    renderHistory();
+    this.textContent = "清空记录";
+    delete this.dataset.arm;
+    toast("战绩已清空");
+  } else {
+    this.dataset.arm = "1";
+    this.textContent = "再点一次确认清空";
+    setTimeout(() => { this.textContent = "清空记录"; delete this.dataset.arm; }, 2500);
+  }
+});
+
 $("bgBtn").addEventListener("click", () => {
   if (window.__bgNext) { window.__bgNext(); toast("已切换背景壁纸"); }
 });
@@ -770,11 +1145,18 @@ $("soundBtn").addEventListener("click", function () {
   this.textContent = soundOn ? "🔊" : "🔇";
   if (soundOn) { ensureAudio(); beep(660, 0.06, "sine", 0.1); }
 });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    if ($("historyOverlay").classList.contains("show")) closeHistory();
+  }
+});
 document.addEventListener("pointerdown", ensureAudio, { once: true });
-window.addEventListener("resize", () => { layout(); });
+window.addEventListener("resize", () => layout());
 
-buildTiles();
-newGame();
+/* ================= 启动：先选难度再开局 ================= */
+layout();
+renderTime();
+openDiff(false);
 </script>
 </body>
 </html>
