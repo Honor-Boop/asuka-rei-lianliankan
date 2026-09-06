@@ -1,12 +1,6 @@
 // auto-generated: 2K+ wallpapers of Ayanami Rei / Souryuu Asuka / Katsuragi Misato
 window.WALLPAPER_LIST = [
   {
-    "src": "wallpapers/asuka_wall_02.jpg",
-    "thumb": "wallpapers/thumbs/asuka_wall_02.jpg",
-    "char": "asuka",
-    "res": "3840x2160"
-  },
-  {
     "src": "wallpapers/asuka_wall_03.jpg",
     "thumb": "wallpapers/thumbs/asuka_wall_03.jpg",
     "char": "asuka",
@@ -41,6 +35,30 @@ window.WALLPAPER_LIST = [
     "thumb": "wallpapers/thumbs/asuka_wall_10.jpg",
     "char": "asuka",
     "res": "5129x3000"
+  },
+  {
+    "src": "wallpapers/asuka_wall_11.jpg",
+    "thumb": "wallpapers/thumbs/asuka_wall_11.jpg",
+    "char": "asuka",
+    "res": "4096x1864"
+  },
+  {
+    "src": "wallpapers/asuka_wall_12.jpg",
+    "thumb": "wallpapers/thumbs/asuka_wall_12.jpg",
+    "char": "asuka",
+    "res": "3274x2160"
+  },
+  {
+    "src": "wallpapers/asuka_wall_13.jpg",
+    "thumb": "wallpapers/thumbs/asuka_wall_13.jpg",
+    "char": "asuka",
+    "res": "2773x2508"
+  },
+  {
+    "src": "wallpapers/asuka_wall_14.jpg",
+    "thumb": "wallpapers/thumbs/asuka_wall_14.jpg",
+    "char": "asuka",
+    "res": "4337x2439"
   },
   {
     "src": "wallpapers/misato_wall_01.png",
