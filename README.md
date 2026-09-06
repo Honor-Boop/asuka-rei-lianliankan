@@ -34,7 +34,7 @@ python -m http.server 8765
 ### 桌面端启动（Windows）
 
 双击 `start_lianliankan.vbs`（或在桌面创建指向它的快捷方式，图标用 `assets/icon.ico`）：
-自动检测并在后台拉起本地服务（`python -m http.server 8765`），
+自动检测并在后台拉起本地服务（`serve.py`，带 no-store 禁缓存头），
 然后以**应用窗口模式**（无地址栏）在 Edge/Chrome 中打开游戏，体验接近桌面程序。
 
 ## 游戏规则与功能

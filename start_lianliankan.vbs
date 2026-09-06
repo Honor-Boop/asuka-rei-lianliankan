@@ -22,7 +22,7 @@ End Function
 up = ServerUp()
 If Not up Then
   sh.CurrentDirectory = dir
-  sh.Run "cmd /c cd /d """ & dir & """ && start /b python -m http.server 8765 --bind 127.0.0.1", 0, False
+  sh.Run "cmd /c cd /d """ & dir & """ && start /b python serve.py", 0, False
   For i = 1 To 12
     WScript.Sleep 500
     If ServerUp() Then Exit For
