@@ -74,7 +74,7 @@
     front.classList.remove("on");
     front = back;
     current = index;
-    const who = item.char === "rei" ? "绫波丽" : "明日香";
+    const who = { rei: "绫波丽", asuka: "明日香", misato: "美里" }[item.char] || item.char;
     tag.textContent = `${who} · ${item.res}`;
   }
 

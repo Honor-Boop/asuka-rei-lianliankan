@@ -93,6 +93,7 @@
   .badge { border-radius: 6px; padding: 2px 8px; font-size: 11px; letter-spacing: 1px; }
   .badge.rei { background: rgba(88, 182, 255, 0.2); color: var(--rei); border: 1px solid rgba(88,182,255,0.5); }
   .badge.asuka { background: rgba(255, 106, 61, 0.18); color: var(--asuka); border: 1px solid rgba(255,106,61,0.5); }
+  .badge.misato { background: rgba(180, 140, 255, 0.2); color: #c9a6ff; border: 1px solid rgba(180,140,255,0.5); }
   .res { margin-left: auto; color: var(--text-dim); font-variant-numeric: tabular-nums; }
 
   /* ---------- 灯箱 ---------- */
@@ -159,6 +160,7 @@
     <button data-char="all" class="active">全部</button>
     <button data-char="rei">绫波丽</button>
     <button data-char="asuka">明日香</button>
+    <button data-char="misato">美里</button>
   </div>
 </header>
 <div class="count" id="count"></div>
@@ -186,7 +188,7 @@
 <script>
 "use strict";
 const LIST = window.WALLPAPER_LIST || [];
-const CHAR_NAME = { rei: "绫波丽", asuka: "明日香" };
+const CHAR_NAME = { rei: "绫波丽", asuka: "明日香", misato: "美里" };
 let filterChar = "all";
 let viewList = [];      // 当前筛选下的条目
 let lbIndex = 0;

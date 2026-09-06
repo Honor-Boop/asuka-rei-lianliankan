@@ -16,7 +16,7 @@
 | `background.js` | 两页共用的背景轮换组件：每 12 秒淡入淡出切换一张壁纸，提供 `🖼 换背景` 按钮（`window.__bgNext()`） |
 | `deco.js` | EVA 元素侧边装饰栏：NERV 徽记、MAGI、A.T. FIELD、同步率面板（联动战况，连击暴走、通关 400%） |
 | `start_lianliankan.vbs` | Windows 桌面启动器：自动拉起本地服务并以应用窗口打开游戏 |
-| `wallpapers/` | 15 张 2K（2560×1440）以上壁纸 + 缩略图 + `manifest.js` 清单 |
+| `wallpapers/` | 25 张 2K（2560×1440）以上壁纸（绫波丽 8 / 明日香 7 / 美里 10）+ 缩略图 + `manifest.js` 清单 |
 | `images/` | 连连看牌面用的 160×160 头像图（28 张） |
 | `assets/` | 桌面快捷方式图标（绫波丽 × 明日香 合成） |
 | `scripts/` | 图片抓取与处理脚本（Python + Pillow） |
