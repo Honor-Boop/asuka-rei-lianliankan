@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>五珠对弈 · 明日香 × 绫波丽</title>
+<style>
+  :root {
+    --bg1: #17102b;
+    --bg2: #0b0817;
+    --panel: rgba(255, 255, 255, 0.055);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --rei: #58b6ff;
+    --asuka: #ff6a3d;
+    --gold: #ffd54a;
+    --eva-green: #58ffa3;
+    --eva-red: #ff5a3c;
+    --text: #ece8f7;
+    --text-dim: #9a92b8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(88, 182, 255, 0.14), transparent 60%),
+      radial-gradient(1000px 700px at 12% 110%, rgba(255, 106, 61, 0.13), transparent 60%),
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.018) 0 2px, transparent 2px 26px),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 10px 26px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  header {
+    width: 100%;
+    max-width: 980px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 6px 6px 12px;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .logo {
+    font-size: 28px;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1.05;
+  }
+  .subtitle { font-size: 12px; color: var(--text-dim); letter-spacing: 3px; margin-top: 3px; }
+
+  .score-wrap { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+  .pcard {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 12px; padding: 8px 14px; min-width: 150px;
+    transition: box-shadow .2s, border-color .2s;
+  }
+  .pcard.turn { box-shadow: 0 0 16px rgba(255, 213, 74, 0.35); border-color: var(--gold); }
+  .pcard img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid; }
+  .pcard.p img { border-color: var(--rei); }
+  .pcard.a img { border-color: var(--asuka); }
+  .pcard .who { font-size: 12px; color: var(--text-dim); }
+  .pcard .val { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .pcard.p .val { color: var(--rei); }
+  .pcard.a .val { color: var(--asuka); }
+  .vs { font-style: italic; font-weight: 900; color: var(--text-dim); }
+
+  .controls { display: flex; gap: 8px; width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .controls button {
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 8px 13px; cursor: pointer; transition: all .15s;
+  }
+  .controls button:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+
+  /* ---------- 棋盘 ---------- */
+  #boardWrap { position: relative; margin-top: 8px; }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(9, var(--cell));
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 8px;
+  }
+  .cell {
+    width: var(--cell); height: var(--cell);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.12s, box-shadow 0.15s;
+  }
+  .cell.empty:hover { background: rgba(255, 255, 255, 0.1); box-shadow: inset 0 0 0 2px rgba(255, 213, 74, 0.45); }
+  .ball {
+    width: 86%; height: 86%;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2.5px solid;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+    animation: drop .18s ease-out;
+  }
+  .ball img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+  .ball.p { border-color: var(--rei); box-shadow: 0 0 10px rgba(88, 182, 255, 0.5), 0 3px 10px rgba(0,0,0,.45); }
+  .ball.a { border-color: var(--asuka); box-shadow: 0 0 10px rgba(255, 106, 61, 0.5), 0 3px 10px rgba(0,0,0,.45); }
+  @keyframes drop {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .cell.scoring { animation: scoreGlow 0.65s ease-in-out 1; border-radius: 10px; }
+  @keyframes scoreGlow {
+    0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 213, 74, 0); }
+    50% { box-shadow: inset 0 0 0 3px var(--gold), 0 0 18px rgba(255, 213, 74, 0.8); }
+  }
+  .cell .vanish { transition: transform .45s, opacity .45s; transform: scale(0.2) rotate(35deg); opacity: 0; }
+
+  #turnBar {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 22px;
+  }
+  #turnBar b { color: var(--gold); }
+
+  .score-pop {
+    position: absolute; z-index: 8;
+    font-weight: 900; font-size: 20px;
+    pointer-events: none;
+    animation: popUp 0.9s ease-out forwards;
+  }
+  .score-pop.p { color: var(--rei); text-shadow: 0 0 12px rgba(88, 182, 255, 0.9); }
+  .score-pop.a { color: var(--asuka); text-shadow: 0 0 12px rgba(255, 106, 61, 0.9); }
+  @keyframes popUp {
+    0% { transform: translate(-50%, 0) scale(0.7); opacity: 0; }
+    25% { transform: translate(-50%, -12px) scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -46px) scale(1); opacity: 0; }
+  }
+
+  /* ---------- 结算 ---------- */
+  #overlay {
+    position: absolute; inset: 0; z-index: 10;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(10, 6, 20, 0.72);
+    backdrop-filter: blur(6px);
+    border-radius: 14px;
+  }
+  #overlay.show { display: flex; }
+  .end-card {
+    text-align: center;
+    background: rgba(20, 14, 36, 0.9);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 30px 44px;
+    box-shadow: 0 10px 60px rgba(0,0,0,0.6);
+  }
+  .end-card h2 { font-size: 26px; font-style: italic; letter-spacing: 2px; margin-bottom: 10px; }
+  .end-card h2.win { background: linear-gradient(90deg, var(--rei), var(--asuka)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .end-card h2.lose { color: var(--eva-red); text-shadow: 0 0 16px rgba(255,90,60,.5); }
+  .end-card h2.draw { color: var(--gold); text-shadow: 0 0 16px rgba(255,213,74,.5); }
+  .end-card p { color: var(--text-dim); font-size: 14px; margin: 4px 0; }
+  .end-card p b { color: var(--gold); }
+  .end-card .btns { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .end-card button {
+    font-family: inherit; font-size: 14px; font-weight: 700; color: #14101f;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    border: none; border-radius: 10px; padding: 10px 24px; cursor: pointer;
+  }
+  .end-card button.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); font-weight: 400; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 34px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20, 14, 36, 0.92);
+    border: 1px solid var(--panel-border);
+    color: var(--text); padding: 9px 18px; border-radius: 10px; font-size: 14px;
+    opacity: 0; transition: all 0.25s; z-index: 99; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  footer {
+    margin-top: 14px; font-size: 12px; color: var(--text-dim);
+    text-align: center; line-height: 1.8; max-width: 720px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">五珠对弈</div>
+    <div class="subtitle">五珠连线 · 人机对抗 · RENJU DUEL</div>
+  </div>
+  <div class="score-wrap">
+    <div class="pcard p" id="cardP">
+      <img src="images/rei_15.jpg" alt="绫波丽">
+      <div><div class="who">你 · 绫波丽</div><div class="val" id="scoreP">0</div></div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="pcard a" id="cardA">
+      <img src="images/asuka_5.jpg" alt="明日香">
+      <div><div class="who">AI · 明日香</div><div class="val" id="scoreA">0</div></div>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="restartBtn">↻ 重开</button>
+    <button id="modeBtn">🎮 玩法选择</button>
+  </div>
+</header>
+
+<div id="boardWrap">
+  <div id="grid"></div>
+  <div id="turnBar"></div>
+  <div id="overlay">
+    <div class="end-card">
+      <h2 id="endTitle">胜 利 ！</h2>
+      <p id="endStats">比分 -- : --</p>
+      <p id="endNote"></p>
+      <div class="btns">
+        <button id="againBtn">再 来 一 局</button>
+        <button id="modeBtn2" class="ghost">返回玩法选择</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  你执<b style="color:var(--rei)">绫波丽珠</b>，AI 执<b style="color:var(--asuka)">明日香珠</b>，轮流落子。
+  任意横竖斜方向连成 5 珠即得分并消除（<b>连长 × 10 分</b>，一次成双线双倍计），
+  棋盘填满后比分高者胜。你也可以抢在对方连线前用珠子封堵。
+</footer>
+
+<div id="toast"></div>
+
+<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\/script>');</script>
+<script src="background.js"></script>
+<script src="deco.js"></script>
+
+<script>
+"use strict";
+
+/* ================= 配置与状态 ================= */
+const N = 9;                 // 9×9 棋盘
+const P = 1, A = 2;          // 玩家 / AI
+const DIRS = [[0, 1], [1, 0], [1, 1], [1, -1]];
+const BALL_IMG = { 1: "images/rei_15.jpg", 2: "images/asuka_5.jpg" };
+
+let board = new Array(N * N).fill(0);
+let cells = [];
+let turn = P;
+let over = false, busy = false;
+const scores = { 1: 0, 2: 0 };
+let cell = 54, audioCtx = null;
+
+const $ = (id) => document.getElementById(id);
+const gridEl = $("grid"), wrapEl = $("boardWrap");
+
+/* ================= 音效 ================= */
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(freq, dur, type = "sine", gain = 0.12, delay = 0) {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+const sndPlace = () => beep(440, 0.06, "triangle", 0.1);
+const sndScore = () => { beep(523.25, 0.1, "sine", 0.14); beep(783.99, 0.12, "sine", 0.14, 0.07); };
+const sndWin   = () => [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => beep(f, 0.18, "sine", 0.15, i * 0.12));
+const sndLose  = () => [330, 262, 196].forEach((f, i) => beep(f, 0.22, "sawtooth", 0.09, i * 0.18));
+
+/* ================= 棋盘渲染 ================= */
+function buildBoard() {
+  gridEl.innerHTML = "";
+  cells = [];
+  for (let i = 0; i < N * N; i++) {
+    const btn = document.createElement("button");
+    btn.className = "cell empty";
+    btn.addEventListener("click", () => playerMove(i));
+    gridEl.appendChild(btn);
+    cells.push(btn);
+  }
+}
+
+function renderCell(i) {
+  const btn = gridEl.children[i];
+  btn.classList.remove("scoring");
+  btn.innerHTML = "";
+  const v = board[i];
+  if (v === 0) { btn.classList.add("empty"); return; }
+  btn.classList.remove("empty");
+  const ball = document.createElement("div");
+  ball.className = "ball " + (v === P ? "p" : "a");
+  const img = document.createElement("img");
+  img.src = BALL_IMG[v];
+  img.draggable = false;
+  ball.appendChild(img);
+  btn.appendChild(ball);
+}
+
+function layout() {
+  const headerH = document.querySelector("header").offsetHeight;
+  const avail = Math.min(window.innerHeight - headerH - 150, window.innerWidth - 60, 620);
+  cell = Math.max(30, Math.min(58, Math.floor((avail - 16 - 8 * 4) / 9)));
+  document.documentElement.style.setProperty("--cell", cell + "px");
+}
+
+/* ================= 规则核心 ================= */
+function findScore(i, who) {
+  const r = Math.floor(i / N), c = i % N;
+  let gain = 0;
+  const clear = new Set();
+  for (const [dr, dc] of DIRS) {
+    const line = [i];
+    let rr = r + dr, cc = c + dc;
+    while (rr >= 0 && rr < N && cc >= 0 && cc < N && board[rr * N + cc] === who) {
+      line.push(rr * N + cc); rr += dr; cc += dc;
+    }
+    rr = r - dr; cc = c - dc;
+    while (rr >= 0 && rr < N && cc >= 0 && cc < N && board[rr * N + cc] === who) {
+      line.unshift(rr * N + cc); rr -= dr; cc -= dc;
+    }
+    if (line.length >= 5) {
+      gain += line.length * 10;
+      line.forEach(j => clear.add(j));
+    }
+  }
+  return gain ? { gain, cells: [...clear] } : null;
+}
+
+function lineLen(i, who, dr, dc) {
+  const r = Math.floor(i / N), c = i % N;
+  let n = 1, rr = r + dr, cc = c + dc;
+  while (rr >= 0 && rr < N && cc >= 0 && cc < N && board[rr * N + cc] === who) { n++; rr += dr; cc += dc; }
+  rr = r - dr; cc = c - dc;
+  while (rr >= 0 && rr < N && cc >= 0 && cc < N && board[rr * N + cc] === who) { n++; rr -= dr; cc -= dc; }
+  return n;
+}
+
+function boardFull() { return board.every(v => v !== 0); }
+
+/* ================= 落子与流程 ================= */
+function commitPlace(i, who, done) {
+  board[i] = who;
+  renderCell(i);
+  sndPlace();
+  const res = findScore(i, who);
+  if (res) {
+    scores[who] += res.gain;
+    updateHUD();
+    res.cells.forEach(j => {
+      cells[j].classList.add("scoring");
+      const b = cells[j].firstChild;
+      if (b) setTimeout(() => b.classList.add("vanish"), 200);
+    });
+    popScore(i, "+" + res.gain, who);
+    sndScore();
+    setTimeout(() => {
+      res.cells.forEach(j => { board[j] = 0; renderCell(j); });
+      done();
+    }, 700);
+  } else {
+    updateHUD();
+    done();
+  }
+}
+
+function playerMove(i) {
+  ensureAudio();
+  if (over || busy || turn !== P || board[i] !== 0) return;
+  busy = true;
+  commitPlace(i, P, () => {
+    if (boardFull()) { finish(); return; }
+    turn = A;
+    updateTurn();
+    setTimeout(aiTurn, 550);
+  });
+}
+
+function aiTurn() {
+  if (over) return;
+  const i = aiPick();
+  commitPlace(i, A, () => {
+    if (boardFull()) { finish(); return; }
+    turn = P;
+    busy = false;
+    updateTurn();
+  });
+}
+
+function updateTurn() {
+  $("turnBar").innerHTML = over ? "对局结束"
+    : turn === P ? "轮到你了 —— 落下一颗<b>绫波丽珠</b>"
+    : "<b>明日香</b>思考中……";
+  $("cardP").classList.toggle("turn", !over && turn === P);
+  $("cardA").classList.toggle("turn", !over && turn === A);
+}
+
+function updateHUD() {
+  $("scoreP").textContent = scores[P];
+  $("scoreA").textContent = scores[A];
+}
+
+function popScore(i, text, who) {
+  const r = Math.floor(i / N), c = i % N;
+  const el = document.createElement("div");
+  el.className = "score-pop " + (who === P ? "p" : "a");
+  el.textContent = text;
+  el.style.left = (c * (cell + 4) + cell / 2 + 8) + "px";
+  el.style.top = (r * (cell + 4) + cell / 2 + 8) + "px";
+  wrapEl.appendChild(el);
+  setTimeout(() => el.remove(), 950);
+}
+
+/* ================= AI ================= */
+function aiPick() {
+  const empties = [];
+  for (let i = 0; i < N * N; i++) if (board[i] === 0) empties.push(i);
+  // 1. 自己能立即成五 → 直接得分
+  for (const i of empties) {
+    board[i] = A;
+    const r = findScore(i, A);
+    board[i] = 0;
+    if (r) return i;
+  }
+  // 2. 玩家下一手能成五 → 封堵分最高的那个点
+  const blocks = [];
+  for (const i of empties) {
+    board[i] = P;
+    const r = findScore(i, P);
+    board[i] = 0;
+    if (r) blocks.push({ i, gain: r.gain });
+  }
+  if (blocks.length) {
+    blocks.sort((a, b) => b.gain - a.gain);
+    return blocks[0].i;
+  }
+  // 3. 启发式：成线潜力 + 限制玩家 + 中心偏好
+  let best = empties[0], bs = -Infinity;
+  for (const i of empties) {
+    board[i] = A;
+    let mine = 0;
+    for (const [dr, dc] of DIRS) mine = Math.max(mine, lineLen(i, A, dr, dc));
+    board[i] = 0;
+    board[i] = P;
+    let theirs = 0;
+    for (const [dr, dc] of DIRS) theirs = Math.max(theirs, lineLen(i, P, dr, dc));
+    board[i] = 0;
+    const r = Math.floor(i / N), c = i % N;
+    const s = mine * mine * 3 + theirs * theirs * 1.5
+            + (6 - (Math.abs(r - 4) + Math.abs(c - 4))) + Math.random() * 2;
+    if (s > bs) { bs = s; best = i; }
+  }
+  return best;
+}
+
+/* ================= 结算 ================= */
+function finish() {
+  over = true;
+  busy = false;
+  updateTurn();
+  const w = scores[P] > scores[A] ? P : scores[A] > scores[P] ? A : 0;
+  const h2 = $("endTitle");
+  h2.className = "";
+  if (w === P) { h2.textContent = "胜 利 ！"; h2.classList.add("win"); sndWin(); }
+  else if (w === A) { h2.textContent = "惜 败 ……"; h2.classList.add("lose"); sndLose(); }
+  else { h2.textContent = "平 局"; h2.classList.add("draw"); sndScore(); }
+  $("endStats").innerHTML =
+    `你（绫波丽）<b>${scores[P]}</b> : <b>${scores[A]}</b> 明日香（AI）`;
+  $("endNote").textContent = w === P
+    ? "指挥官的连线封锁滴水不漏！"
+    : w === A ? "明日香得意地比了个 V——下次抢先封锁她的连线吧！"
+    : "势均力敌的对手，再来一局？";
+  $("overlay").classList.add("show");
+}
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function newGame() {
+  board = new Array(N * N).fill(0);
+  scores[P] = 0; scores[A] = 0;
+  turn = P; over = false; busy = false;
+  $("overlay").classList.remove("show");
+  buildBoard();
+  updateHUD();
+  updateTurn();
+}
+
+/* ================= 按钮 ================= */
+$("restartBtn").addEventListener("click", () => { ensureAudio(); newGame(); toast("新对局开始，你先手"); });
+$("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("modeBtn").addEventListener("click", () => { location.href = "index.html"; });
+$("modeBtn2").addEventListener("click", () => { location.href = "index.html"; });
+document.addEventListener("pointerdown", ensureAudio, { once: true });
+window.addEventListener("resize", layout);
+
+/* ================= 启动 ================= */
+layout();
+buildBoard();
+updateHUD();
+updateTurn();
+</script>
+</body>
+</html>

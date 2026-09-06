@@ -206,6 +206,13 @@
   .diff-opt[data-d="angel"]:hover { border-color: rgba(255,90,60,.6); box-shadow: 0 0 18px rgba(255,90,60,.3); }
   #diffCancel { margin-top: 18px; }
 
+  .mode-opt b { font-size: 19px; }
+  .mode-opt[data-mode="lianliankan"] b { color: var(--rei); }
+  .mode-opt[data-mode="lianliankan"]:hover { border-color: rgba(88,182,255,.6); box-shadow: 0 0 18px rgba(88,182,255,.25); }
+  .mode-opt[data-mode="five"] b { color: var(--asuka); }
+  .mode-opt[data-mode="five"]:hover { border-color: rgba(255,106,61,.6); box-shadow: 0 0 18px rgba(255,106,61,.3); }
+  .mode-opt .em-new { color: var(--gold); }
+
   /* ---------- 结果 / 战绩 弹窗 ---------- */
   #overlay {
     position: absolute; inset: 0; z-index: 10;
@@ -358,6 +365,7 @@
     <button id="hintBtn">💡 提示 ×<span id="hintLeft">3</span></button>
     <button id="shuffleBtn">🔀 洗牌</button>
     <button id="restartBtn">↻ 重开</button>
+    <button id="modeBtn">🎮 玩法</button>
     <button id="diffBtn">⚙ 难度</button>
     <button id="histBtn">📊 战绩</button>
     <button id="bgBtn" title="切换下一张背景壁纸">🖼 换背景</button>
@@ -391,6 +399,27 @@
       <button id="histClear" class="ghost">清空记录</button>
       <button id="histClose">关 闭</button>
     </div>
+  </div>
+</div>
+
+<!-- 玩法选择（全屏，最先出现） -->
+<div id="modeOverlay" class="modal">
+  <div class="diff-card">
+    <div class="diff-title">选择玩法 <span>SELECT MODE</span></div>
+    <div class="diff-sub">指挥官，今晚想怎么打？</div>
+    <div class="diff-list">
+      <button class="diff-opt mode-opt" data-mode="lianliankan">
+        <b>连连看</b>
+        <span>三档难度 · 图案配对消除<br>倒计时 + 战绩系统</span>
+        <em>经典玩法</em>
+      </button>
+      <button class="diff-opt mode-opt" data-mode="five">
+        <b>五珠对弈</b>
+        <span>与 AI 轮流落珠<br>五珠连线得分 · 分高者胜</span>
+        <em>新玩法</em>
+      </button>
+    </div>
+    <button id="modeCancel" style="display:none;margin-top:18px;font-family:inherit;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:8px 22px;cursor:pointer">返回当前对局</button>
   </div>
 </div>
 
@@ -1267,10 +1296,34 @@ document.addEventListener("keydown", e => {
 document.addEventListener("pointerdown", ensureAudio, { once: true });
 window.addEventListener("resize", () => layout());
 
-/* ================= 启动：先选难度再开局 ================= */
+/* ================= 玩法选择 ================= */
+const modeOverlay = $("modeOverlay");
+let modeOpenedMidGame = false;
+function openMode(fromGame) {
+  modeOpenedMidGame = !!fromGame;
+  $("modeCancel").style.display = fromGame ? "inline-block" : "none";
+  modeOverlay.classList.add("show");
+  if (fromGame) pauseTimer();
+}
+function closeMode() {
+  modeOverlay.classList.remove("show");
+  if (modeOpenedMidGame) resumeTimer();
+}
+document.querySelectorAll(".mode-opt").forEach(btn => {
+  btn.addEventListener("click", () => {
+    ensureAudio();
+    modeOverlay.classList.remove("show");
+    if (btn.dataset.mode === "five") { location.href = "gomoku.html"; return; }
+    if (diffKey) resumeTimer(); else openDiff(false);
+  });
+});
+$("modeCancel").addEventListener("click", closeMode);
+$("modeBtn").addEventListener("click", () => { ensureAudio(); openMode(!!diffKey && !over); });
+
+/* ================= 启动：先选玩法 ================= */
 layout();
 renderTime();
-openDiff(false);
+modeOverlay.classList.add("show");
 </script>
 </body>
 </html>
