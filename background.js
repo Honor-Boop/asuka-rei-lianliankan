@@ -14,7 +14,7 @@
   const style = document.createElement("style");
   style.textContent = `
     #bgRotator { position: fixed; inset: 0; z-index: -1; overflow: hidden;
-                 background: #0b0817; }
+                 background: #1b1544; }
     #bgRotator .bg-layer { position: absolute; inset: -24px;
                            background-size: cover; background-position: center;
                            opacity: 0; transition: opacity ${FADE_MS}ms ease-in-out;
@@ -24,8 +24,8 @@
       background:
         radial-gradient(1100px 640px at 82% -8%, rgba(88, 182, 255, 0.10), transparent 60%),
         radial-gradient(950px 640px at 10% 108%, rgba(255, 106, 61, 0.10), transparent 60%),
-        repeating-linear-gradient(135deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 26px),
-        linear-gradient(180deg, rgba(11, 8, 23, 0.60), rgba(11, 8, 23, 0.74));
+        repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 26px),
+        linear-gradient(180deg, rgba(27, 21, 68, 0.38), rgba(27, 21, 68, 0.55));
     }
     #bgRotator .bg-tag { position: fixed; right: 14px; bottom: 10px; z-index: 1;
       font-size: 11px; letter-spacing: 1px; color: rgba(236, 232, 247, 0.5);

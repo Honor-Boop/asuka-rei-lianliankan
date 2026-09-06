@@ -10,7 +10,7 @@
   style.textContent = `
     .deco-rail{position:fixed;top:0;bottom:0;width:150px;z-index:0;pointer-events:none;
       display:none;flex-direction:column;justify-content:space-between;align-items:center;
-      padding:16px 6px;font-family:Consolas,'Courier New',monospace;color:#b9b0d6;opacity:.92}
+      padding:16px 6px;font-family:Consolas,'Courier New',monospace;color:#b9b0d6;opacity:1}
     body.deco-on .deco-rail{display:flex}
     .deco-rail.left{left:0;border-right:1px dashed rgba(255,255,255,.07)}
     .deco-rail.right{right:0;border-left:1px dashed rgba(255,255,255,.07)}
@@ -18,27 +18,27 @@
       background:repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 1px,transparent 1px 4px)}
     .deco-item{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;z-index:1}
     .vtext{display:flex;gap:12px;writing-mode:vertical-rl;font-family:"Microsoft YaHei",sans-serif;
-      font-size:13px;letter-spacing:8px;color:rgba(236,232,247,.30);padding:6px 0}
-    .vtext b{color:rgba(236,232,247,.5);font-weight:600}
+      font-size:13px;letter-spacing:8px;color:rgba(255,255,255,.5);padding:6px 0}
+    .vtext b{color:rgba(255,255,255,.75);font-weight:600}
     .stripe{width:104px;height:12px;border-radius:3px;opacity:.7;
       background:repeating-linear-gradient(-45deg,#f5c518 0 9px,#191423 9px 18px)}
     .chip{font-size:10px;letter-spacing:1px;padding:4px 9px;border:1px solid rgba(88,255,163,.4);
       border-radius:6px;color:#58ffa3;display:flex;gap:6px;align-items:center;background:rgba(88,255,163,.05)}
     .chip .dot{width:6px;height:6px;border-radius:50%;background:#58ffa3;animation:blink 1.6s steps(2) infinite}
     @keyframes blink{50%{opacity:.15}}
-    .tiny{font-size:8px;letter-spacing:2px;color:rgba(236,232,247,.3)}
-    .barcode{width:88px;height:20px;opacity:.45;
+    .tiny{font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.5)}
+    .barcode{width:88px;height:20px;opacity:.65;
       background:repeating-linear-gradient(90deg,#cfc8e8 0 2px,transparent 2px 5px,#cfc8e8 5px 6px,transparent 6px 11px,#cfc8e8 11px 14px,transparent 14px 17px)}
     .nerv-word{font-weight:900;font-style:italic;font-size:19px;letter-spacing:5px;color:#e8332a;
       text-shadow:0 0 14px rgba(232,51,42,.45);font-family:"Segoe UI",sans-serif}
-    .motto{font-size:7px;letter-spacing:1.5px;color:rgba(236,232,247,.35);line-height:1.7;text-transform:uppercase}
+    .motto{font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,.55);line-height:1.7;text-transform:uppercase}
     .sync-box{position:relative;border:1px solid rgba(88,255,163,.35);border-radius:10px;
       padding:10px 12px 8px;background:rgba(10,8,20,.55);min-width:118px}
     .sync-box .lab{font-size:9px;letter-spacing:1.5px;color:#58ffa3}
     .sync-box .val{font-size:23px;font-weight:700;color:#58ffa3;font-variant-numeric:tabular-nums;
       text-shadow:0 0 12px rgba(88,255,163,.4);line-height:1.2}
     .sync-box .val i{font-style:normal;font-size:13px}
-    .sync-box .sub{font-size:8px;letter-spacing:1.5px;color:rgba(236,232,247,.35)}
+    .sync-box .sub{font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,.55)}
     .sync-box .ring{position:absolute;left:50%;top:50%;width:130px;height:130px;margin:-65px 0 0 -65px;
       animation:spin 26s linear infinite;opacity:.4}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -47,7 +47,7 @@
     @keyframes alarm{50%{background:rgba(255,60,30,.14)}}
     .magi{display:flex;flex-direction:column;gap:6px;align-items:center}
     .magi .node{display:flex;flex-direction:column;align-items:center;gap:2px}
-    .magi .node span{font-size:7.5px;letter-spacing:1.5px;color:rgba(236,232,247,.4)}
+    .magi .node span{font-size:7.5px;letter-spacing:1.5px;color:rgba(255,255,255,.6)}
     .magi .node.pulse svg{animation:magiPulse 2.8s ease-in-out infinite}
     @keyframes magiPulse{50%{opacity:.35}}
     .atf svg{animation:atPulse 3.6s ease-in-out infinite}
