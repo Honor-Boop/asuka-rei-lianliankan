@@ -146,6 +146,66 @@
   }
   #lbDownload:hover { background: rgba(255,255,255,0.16); }
 
+  /* ---------- 添加 / 删除 ---------- */
+  .card .del {
+    position: absolute; top: 8px; right: 8px; z-index: 2;
+    display: none;
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 1px solid rgba(255, 90, 60, 0.7); color: var(--eva-red, #ff5a3c);
+    background: rgba(20, 14, 36, 0.85); font-size: 14px; line-height: 1;
+    cursor: pointer; font-family: inherit;
+  }
+  .card:hover .del { display: block; }
+  .card .del:hover { background: #ff5a3c; color: #fff; }
+  .card .del.arm { background: #ff5a3c; color: #fff; }
+  .modal {
+    position: fixed; inset: 0; z-index: 60;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(8, 5, 18, 0.8); backdrop-filter: blur(8px);
+  }
+  .modal.show { display: flex; }
+  .up-card {
+    text-align: center;
+    background: rgba(34, 25, 66, 0.92);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 28px 36px;
+    max-width: 540px; width: calc(100vw - 60px);
+    box-shadow: 0 10px 60px rgba(0,0,0,0.6);
+  }
+  .up-card h2 {
+    font-size: 22px; font-style: italic; letter-spacing: 2px; margin-bottom: 8px;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .up-card .sub { font-size: 12.5px; color: var(--text-dim); margin-bottom: 16px; }
+  .up-row { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+  .up-row select, .up-row input[type="file"] {
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 8px; padding: 7px 10px;
+  }
+  .up-row select option { background: #1b1544; }
+  .up-status { min-height: 18px; font-size: 12.5px; color: var(--gold); margin-top: 6px; }
+  .up-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 12px; line-height: 1.6; }
+  .btns { display: flex; gap: 10px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .btns button {
+    font-family: inherit; font-size: 13.5px; font-weight: 700; color: #14101f;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    border: none; border-radius: 10px; padding: 9px 22px; cursor: pointer;
+  }
+  .btns button.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); font-weight: 400; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 34px;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(34, 25, 66, 0.95);
+    border: 1px solid var(--panel-border);
+    color: var(--text); padding: 9px 18px; border-radius: 10px; font-size: 14px;
+    opacity: 0; transition: all 0.25s; z-index: 99; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
   footer {
     max-width: 1280px; margin: 26px auto 0; text-align: center;
     font-size: 12px; color: var(--text-dim); line-height: 1.8;
@@ -160,6 +220,7 @@
     <div class="subtitle">明日香 × 绫波丽 · 2K+ WALLPAPERS</div>
   </div>
   <a class="back" href="index.html">◀ 返回连连看</a>
+  <button class="back" id="addBtn" style="cursor:pointer;font-family:inherit">➕ 添加图片</button>
   <div class="filters" id="filters">
     <button data-char="all" class="active">全部</button>
     <button data-char="rei">绫波丽</button>
@@ -173,6 +234,30 @@
 <footer>
   图片来自 safebooru 公开图库（safe 分级，2K 以上分辨率），仅供个人欣赏，版权归原作者所有。
 </footer>
+
+<!-- 添加图片 -->
+<div id="uploadModal" class="modal">
+  <div class="up-card">
+    <h2>添加图片</h2>
+    <div class="sub">选择分类与图片（可多选，JPG / PNG / WEBP，单张 ≤ 30MB），上传后自动生成缩略图入库。</div>
+    <div class="up-row">
+      <select id="upCat">
+        <option value="misato">分类：美里</option>
+        <option value="rei">分类：绫波丽</option>
+        <option value="asuka">分类：明日香</option>
+      </select>
+      <input type="file" id="upFile" multiple accept=".jpg,.jpeg,.png,.webp">
+    </div>
+    <div class="up-status" id="upStatus">尚未选择文件</div>
+    <div class="btns">
+      <button id="upSubmit">上 传</button>
+      <button id="upCancel" class="ghost">取 消</button>
+    </div>
+    <div class="up-hint">上传与删除需通过本地服务（桌面启动器 / serve.py）打开时可用。<br>文件将保存到 wallpapers/ 目录并自动登记到图库。</div>
+  </div>
+</div>
+
+<div id="toast"></div>
 
 <div id="lightbox">
   <img id="lbImg" src="" alt="">
@@ -191,7 +276,8 @@
 <script src="deco.js"></script>
 <script>
 "use strict";
-const LIST = window.WALLPAPER_LIST || [];
+const LIST0 = window.WALLPAPER_LIST || [];
+let LIST = LIST0.slice();
 const CHAR_NAME = { rei: "绫波丽", asuka: "明日香", misato: "美里" };
 let filterChar = "all";
 let viewList = [];      // 当前筛选下的条目
@@ -208,15 +294,46 @@ function render() {
     card.className = "card";
     card.innerHTML = `
       <img src="${w.thumb}" alt="${CHAR_NAME[w.char]}壁纸" loading="lazy">
+      <button class="del" title="删除这张图">✕</button>
       <div class="meta">
         <span class="badge ${w.char}">${CHAR_NAME[w.char]}</span>
         <span class="res">${w.res}</span>
       </div>`;
     card.addEventListener("click", () => openLightbox(i));
+    const del = card.querySelector(".del");
+    del.addEventListener("click", async e => {
+      e.stopPropagation();
+      if (!del.dataset.arm) {
+        del.dataset.arm = "1";
+        del.textContent = "确认?";
+        del.classList.add("arm");
+        setTimeout(() => { del.dataset.arm = ""; del.textContent = "✕"; del.classList.remove("arm"); }, 2500);
+        return;
+      }
+      try { await fetch("api/delete?src=" + encodeURIComponent(w.src), { method: "DELETE" }); } catch (err) {}
+      await refreshList();
+      toast("已删除 " + w.src.split("/").pop());
+    });
     grid.appendChild(card);
   });
   document.getElementById("count").textContent =
     `共 ${viewList.length} 张 · 2K（2560×1440）以上分辨率 · 点击查看大图`;
+}
+
+async function refreshList() {
+  try {
+    const r = await fetch("api/list");
+    if (r.ok) LIST = await r.json();
+  } catch (e) { /* file:// 直开时沿用内嵌清单 */ }
+  render();
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
 function openLightbox(i) {
@@ -251,7 +368,48 @@ document.getElementById("filters").addEventListener("click", e => {
   render();
 });
 
+/* ---------- 添加图片 ---------- */
+const upModal = document.getElementById("uploadModal");
+const upFile = document.getElementById("upFile");
+const upStatus = document.getElementById("upStatus");
+
+document.getElementById("addBtn").addEventListener("click", () => {
+  upModal.classList.add("show");
+  upFile.value = "";
+  upStatus.textContent = "尚未选择文件";
+});
+document.getElementById("upCancel").addEventListener("click", () => upModal.classList.remove("show"));
+upFile.addEventListener("change", function () {
+  upStatus.textContent = this.files.length ? `已选择 ${this.files.length} 个文件` : "尚未选择文件";
+});
+document.getElementById("upSubmit").addEventListener("click", async () => {
+  const files = [...upFile.files];
+  const cat = document.getElementById("upCat").value;
+  if (!files.length) { upStatus.textContent = "请先选择图片文件"; return; }
+  let ok = 0;
+  for (const f of files) {
+    upStatus.textContent = `上传中 ${f.name} ……`;
+    try {
+      const resp = await fetch(`api/upload?char=${cat}&name=${encodeURIComponent(f.name)}`,
+        { method: "POST", body: f });
+      const j = await resp.json();
+      if (j.ok) ok++;
+      else upStatus.textContent = j.error || "上传失败";
+    } catch (err) {
+      upStatus.textContent = "上传失败：请通过桌面启动器（本地服务）打开图库后再试";
+      return;
+    }
+  }
+  await refreshList();
+  upStatus.textContent = `成功添加 ${ok} / ${files.length} 张`;
+  if (ok) {
+    toast(`已添加 ${ok} 张图片`);
+    setTimeout(() => upModal.classList.remove("show"), 800);
+  }
+});
+
 render();
+refreshList();
 </script>
 </body>
 </html>
