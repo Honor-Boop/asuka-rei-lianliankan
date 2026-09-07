@@ -80,6 +80,14 @@
     .lightband{position:fixed;top:0;bottom:0;width:170px;z-index:0;pointer-events:none}
     .lightband.l{left:252px;background:linear-gradient(90deg,rgba(180,140,255,.14),rgba(180,140,255,0))}
     .lightband.r{right:252px;background:linear-gradient(270deg,rgba(255,128,85,.12),rgba(255,128,85,0))}
+
+    .corner{position:fixed;width:30px;height:30px;z-index:4;pointer-events:none;opacity:.85}
+    .corner.tl{top:8px;left:8px;border-top:3px solid rgba(245,197,24,.95);border-left:3px solid rgba(245,197,24,.95)}
+    .corner.tr{top:8px;right:8px;border-top:3px solid rgba(245,197,24,.95);border-right:3px solid rgba(245,197,24,.95)}
+    .corner.bl{bottom:8px;left:8px;border-bottom:3px solid rgba(245,197,24,.95);border-left:3px solid rgba(245,197,24,.95)}
+    .corner.br{bottom:8px;right:8px;border-bottom:3px solid rgba(245,197,24,.95);border-right:3px solid rgba(245,197,24,.95)}
+    .haz-tape{position:fixed;top:0;left:0;right:0;height:4px;z-index:4;pointer-events:none;opacity:.7;
+      background:repeating-linear-gradient(-45deg,#f5c518 0 7px,#14101f 7px 14px)}
   `;
   document.head.appendChild(style);
 
@@ -142,6 +150,15 @@
       <div class="tiny">MAGI SYSTEM · 3 NODES</div>
     </div>`;
 
+  const corners = ["tl", "tr", "bl", "br"].map(k => {
+    const d = document.createElement("div");
+    d.className = "corner " + k;
+    return d;
+  });
+  const tape = document.createElement("div");
+  tape.className = "haz-tape";
+  corners.forEach(c => document.body.appendChild(c));
+  document.body.appendChild(tape);
   const bandL = document.createElement("div");
   bandL.className = "lightband l";
   const bandR = document.createElement("div");
