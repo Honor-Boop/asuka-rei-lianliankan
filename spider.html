@@ -279,24 +279,25 @@ function render() {
     const box = document.createElement("div");
     box.className = "col" + (sel && sel.col === ci ? " selcol" : "");
     box.style.height = colH + "px";
-    let y = 4;
-    let faceCount = 0, downCount = 0;
+    // 预计算每张牌 top：暗牌间隔 10；明牌在上方露 26（暗转明露 14），列底首牌不位移
+    const tops = [];
+    let yy = 4;
     for (let i = 0; i < col.length; i++) {
       const c = col[i];
-      if (!c.up) downCount++;
+      if (!c.up) yy += 10;                        // 先算本张相对上一张的偏移
+      else if (i > 0) yy += (col[i - 1].up ? 26 : 14);
+      tops[i] = yy;                               // 再落位
     }
     for (let i = 0; i < col.length; i++) {
       const c = col[i];
       const card = document.createElement("div");
       card.className = "slot-card";
-      const step = c.up ? (faceCount ? 22 : 0) : 10;
-      card.style.top = y + "px";
+      card.style.top = tops[i] + "px";
       if (!c.up) {
         card.classList.add("face-down");
         const img = document.createElement("img");
         img.src = IMG_BASE + "back.png";
         card.appendChild(img);
-        y += 10;
       } else {
         card.style.zIndex = i;
         const img = document.createElement("img");
@@ -304,8 +305,6 @@ function render() {
         img.draggable = false;
         card.appendChild(img);
         if (sel && sel.col === ci && i >= sel.depth) card.classList.add("sel");
-        y += step || 4;
-        faceCount++;
       }
       card.dataset.ci = ci;
       card.dataset.depth = i;
