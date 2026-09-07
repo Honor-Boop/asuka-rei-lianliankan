@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""EVA 连连看 · 安装程序
+"""EVA 小游戏 · 安装程序
 
 将内嵌的绿色版压缩包解压到用户选择目录，并创建桌面/开始菜单快捷方式。
 支持命令行静默安装（供自动测试）：installer.exe --silent --target D:\\some\\dir
@@ -13,9 +13,9 @@ import zipfile
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-APP_NAME = "EVA连连看"
-BUNDLE = "EVA连连看.zip"
-EXE_REL = os.path.join(APP_NAME, "EVA连连看.exe")
+APP_NAME = "EVA小游戏"
+BUNDLE = "EVA小游戏.zip"
+EXE_REL = os.path.join(APP_NAME, "EVA小游戏.exe")
 
 
 def resource_path(name):
@@ -52,7 +52,7 @@ def make_shortcuts(exe):
         "$lnk.TargetPath = '" + exe + "';"
         "$lnk.WorkingDirectory = '" + os.path.dirname(exe) + "';"
         "$lnk.IconLocation = '" + exe + "';"
-        "$lnk.Description = 'EVA 连连看 · 明日香×绫波丽（连连看/五珠/扫雷/蜘蛛/观景）';"
+        "$lnk.Description = 'EVA 小游戏 · 明日香×绫波丽（连连看/五珠/扫雷/蜘蛛/观景）';"
         "$lnk.Save();"
         "$menu = $env:APPDATA + '\\Microsoft\\Windows\\Start Menu\\Programs';"
         "$lnk2 = $ws.CreateShortcut($menu + '\\" + APP_NAME + ".lnk');"
@@ -74,7 +74,7 @@ def silent_install(target):
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("EVA 连连看 · 安装程序")
+        root.title("EVA 小游戏 · 安装程序")
         root.resizable(False, False)
         try:
             root.iconbitmap(resource_path("icon.ico"))
@@ -83,7 +83,7 @@ class App:
 
         frm = ttk.Frame(root, padding=22)
         frm.grid()
-        ttk.Label(frm, text="EVA 连连看 安装程序",
+        ttk.Label(frm, text="EVA 小游戏 安装程序",
                   font=("Microsoft YaHei UI", 15, "bold")).grid(row=0, column=0, columnspan=3, pady=(0, 6))
         ttk.Label(frm, text="连连看 · 五珠对弈 · 使徒扫雷 · 蜘蛛纸牌 · 观景挂机",
                   foreground="#666").grid(row=1, column=0, columnspan=3, pady=(0, 16))
@@ -133,7 +133,7 @@ class App:
     def done(self, exe):
         self.prog.stop()
         self.status.set("安装完成 ✓")
-        if messagebox.askyesno("完成", "安装完成！\n是否立即运行 EVA 连连看？"):
+        if messagebox.askyesno("完成", "安装完成！\n是否立即运行 EVA 小游戏？"):
             try:
                 os.startfile(exe)  # noqa
             except Exception:

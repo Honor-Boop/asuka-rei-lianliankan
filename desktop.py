@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""EVA 连连看 · 桌面独立程序入口
+"""EVA 小游戏 · 桌面独立程序入口
 
 - 若 8765 端口空闲：本程序内嵌启动本地服务（自带壁纸 API），关闭窗口时一并退出
 - 若已有服务（旧版桌面程序/手动 serve）在跑：直接复用，关闭窗口不影响它
@@ -54,7 +54,7 @@ def main():
     import webview
 
     window = webview.create_window(
-        "EVA 连连看 · 明日香 × 绫波丽",
+        "EVA 小游戏 · 明日香 × 绫波丽",
         "http://127.0.0.1:%d/index.html" % PORT,
         width=1560, height=940,
         min_size=(1180, 720),
