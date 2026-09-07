@@ -389,11 +389,13 @@ function onDragStart(e, ci) {
 
 function canMove(srcC, dstC) {
   const s = stacks[srcC], d = stacks[dstC];
-  const n = segLen(s);
-  const top = s[s.length - 1].r;
   if (dstC === srcC) return false;
   if (d.length === 0) return true;                    // 空列任意放
-  return d[d.length - 1].r === top + 1;               // 目标顶比段顶大 1
+  // 整段放置：目标列顶牌须 = 段最大牌(视觉最下) + 1。
+  // 例：段 7-8-9 → 可放到顶为 10 的列（9+1=10）。
+  const n = segLen(s);
+  const segMax = s[s.length - n].r;                   // 段内最大牌
+  return d[d.length - 1].r === segMax + 1;
 }
 
 function onClick(ci, depth, isUp) {
