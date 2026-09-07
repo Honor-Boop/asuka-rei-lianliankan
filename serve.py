@@ -101,7 +101,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/api/restart":
-            # 刷新程序：异步重启本地服务进程（拉取磁盘最新代码）
+            # 刷新程序：重启服务（托管模式由桌面宿主处理，仅告知）
+            if MANAGED:
+                self.send_json({"ok": True, "managed": True, "msg": "hosted"})
+                return
             self.send_json({"ok": True, "msg": "restarting"})
             threading.Timer(0.5, restart_server).start()
             return
@@ -151,8 +154,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self.send_json({"ok": True, "count": len(manifest)})
 
 
+# 托管模式：被桌面程序(desktop.py)嵌入时置 True——RESTART 端点不自杀宿主
+MANAGED = False
+_SERVER = None
+
+
+def start_server(port=PORT):
+    """启动本地服务（可被桌面程序嵌入），返回 httpd。"""
+    global _SERVER
+    write_manifest()
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    httpd.daemon_threads = True
+    _SERVER = httpd
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    return httpd
+
+
 def restart_server():
-    """自我重启：先起新实例，旧实例随后退出（allow_reuse_address 使重绑快速生效）。"""
+    """独立模式：自我重启为新进程；托管模式：交由宿主处理。"""
+    if MANAGED:
+        return
     try:
         flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
         subprocess.Popen([sys.executable, str(ROOT / "serve.py")],
@@ -164,7 +185,10 @@ def restart_server():
 
 
 if __name__ == "__main__":
-    write_manifest()  # 启动时校准一次
-    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
-    httpd.daemon_threads = True
-    httpd.serve_forever()
+    start_server()
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        if _SERVER:
+            _SERVER.shutdown()

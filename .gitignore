@@ -6,3 +6,8 @@ scripts/__pycache__/
 *.log
 .DS_Store
 Thumbs.db
+
+# 打包产物
+build/
+dist/
+*.spec
