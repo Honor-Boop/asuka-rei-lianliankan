@@ -1,225 +1,10 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="data:,">
-<title>蜘蛛纸牌 · 双姝扑克</title>
-<style>
-  :root {
-    --bg1: #2c2256;
-    --bg2: #1b1544;
-    --panel: rgba(255, 255, 255, 0.11);
-    --panel-border: rgba(255, 255, 255, 0.24);
-    --rei: #74c4ff;
-    --asuka: #ff8055;
-    --gold: #ffe066;
-    --eva-green: #70ffb8;
-    --text: #ffffff;
-    --text-dim: #c9c2ea;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
-    color: var(--text);
-    background:
-      radial-gradient(1200px 700px at 80% -10%, rgba(88, 182, 255, 0.16), transparent 60%),
-      radial-gradient(1000px 700px at 12% 110%, rgba(255, 106, 61, 0.15), transparent 60%),
-      linear-gradient(160deg, var(--bg1), var(--bg2));
-    min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 12px 8px 20px;
-    user-select: none; -webkit-user-select: none;
-  }
+# -*- coding: utf-8 -*-
+"""重建 spider.html：头部模板 + 引入 + 标准规则脚本。"""
+import io
 
-  header {
-    width: 100%; max-width: 1240px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    padding: 4px 6px 10px;
-  }
-  .brand { display: flex; flex-direction: column; }
-  .logo {
-    font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 1px;
-    background: linear-gradient(90deg, var(--rei), #b48cff 55%, var(--asuka));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    line-height: 1.05;
-  }
-  .subtitle { font-size: 11px; color: var(--text-dim); letter-spacing: 3px; margin-top: 2px; }
-  .stats { display: flex; gap: 8px; margin-left: auto; }
-  .stat {
-    background: var(--panel); border: 1px solid var(--panel-border);
-    border-radius: 10px; padding: 4px 12px; text-align: center; min-width: 64px;
-  }
-  .stat .label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
-  .stat b { font-size: 16px; font-variant-numeric: tabular-nums; color: var(--gold); }
-  .controls { display: flex; gap: 7px; width: 100%; justify-content: flex-end; flex-wrap: wrap; }
-  .controls button {
-    font-family: inherit; font-size: 12.5px; color: var(--text);
-    background: var(--panel); border: 1px solid var(--panel-border);
-    border-radius: 9px; padding: 6px 12px; cursor: pointer; transition: all .15s;
-  }
-  .controls button:hover { background: rgba(255,255,255,.18); }
-  .controls button:disabled { opacity: .4; cursor: not-allowed; }
+head = io.open("_spider_head.html", encoding="utf-8").read()
 
-  /* ---------- 牌桌 ---------- */
-  #table {
-    display: flex; gap: 6px;
-    justify-content: center;
-    width: 100%; max-width: 1240px;
-  }
-  .col {
-    flex: 1 1 0;
-    max-width: 96px;
-    min-width: 52px;
-    position: relative;
-    border-radius: 9px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px dashed rgba(255, 255, 255, 0.16);
-    cursor: pointer;
-    transition: background .15s;
-  }
-  .col:hover { background: rgba(255, 255, 255, 0.09); }
-  .col .slot-card {
-    position: absolute; left: 50%; transform: translateX(-50%);
-    width: 100%; border-radius: 7px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.4);
-    transition: filter .12s;
-  }
-  .slot-card img { width: 100%; display: block; border-radius: 7px; }
-  .slot-card.face-down img { filter: brightness(.82) saturate(.9); }
-  .slot-card.sel {
-    outline: 2.5px solid var(--gold);
-    outline-offset: -2px;
-    box-shadow: 0 0 16px rgba(255, 224, 102, .7);
-    z-index: 30;
-  }
-  .col.has-cards:not(.selcol) .slot-card:last-child:hover { filter: brightness(1.08); }
-  .slot-card.drop-hint { box-shadow: 0 0 0 2px var(--eva-green), 0 0 14px rgba(112,255,184,.6); }
-  .col.drop-ok { border-color: rgba(112,255,184,.8); background: rgba(112,255,184,.1);
-                 box-shadow: inset 0 0 20px rgba(112,255,184,.12); }
-  .slot-card.dragging { opacity: .35; }
-  .win-flash { animation: wf .7s ease-in-out; }
-  @keyframes wf { 50% { box-shadow: 0 0 24px rgba(255,224,102,.9); } }
-
-  #turnBar { margin-top: 8px; min-height: 20px; font-size: 12.5px; color: var(--text-dim); text-align: center; }
-  #turnBar b { color: var(--gold); }
-
-  /* ---------- 结算（贴底横幅，同连连看） ---------- */
-  #overlay {
-    position: fixed; inset: 0; z-index: 40;
-    display: none; align-items: flex-end; justify-content: center;
-    background: rgba(8, 5, 18, 0.12); padding-bottom: 7vh;
-  }
-  #overlay.show { display: flex; }
-  .end-card {
-    text-align: center;
-    max-width: 820px; width: calc(100vw - 40px);
-    background: linear-gradient(160deg, rgba(27,21,68,.55), rgba(20,14,36,.5));
-    backdrop-filter: blur(5px);
-    border: 1px solid rgba(255,255,255,.28);
-    border-radius: 16px; padding: 12px 22px 14px;
-    box-shadow: 0 6px 30px rgba(0,0,0,.35);
-  }
-  .end-card h2 { font-size: 19px; margin-bottom: 2px; font-style: italic; letter-spacing: 2px; }
-  .end-card h2.win {
-    background: linear-gradient(90deg, var(--rei), var(--asuka));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-  }
-  .end-card p { color: var(--text-dim); font-size: 12.5px; margin: 1.5px 0; }
-  .end-card p b { color: var(--gold); }
-  .end-card .btns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
-  .end-card button {
-    font-family: inherit; font-size: 13px; font-weight: 700; color: #14101f;
-    background: linear-gradient(90deg, var(--rei), var(--asuka));
-    border: none; border-radius: 9px; padding: 7px 18px; cursor: pointer;
-  }
-  .end-card button.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); font-weight: 400; }
-
-  #toast {
-    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px);
-    background: rgba(34,25,66,.95); border: 1px solid var(--panel-border);
-    color: var(--text); padding: 8px 16px; border-radius: 9px; font-size: 13px;
-    opacity: 0; transition: all .25s; z-index: 60; pointer-events: none;
-  }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  #helpModal { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center;
-    background: rgba(8,5,18,.6); backdrop-filter: blur(4px); }
-  #helpModal.show { display: flex; }
-  #helpModal .box { max-width: 560px; width: calc(100vw - 50px); max-height: 84vh; overflow: auto;
-    background: rgba(34,25,66,.95); border: 1px solid rgba(255,224,102,.4); border-radius: 14px;
-    padding: 20px 26px; color: #fff; line-height: 1.8; font-size: 13.5px; }
-  #helpModal h3 { font-size: 17px; letter-spacing: 2px; color: var(--gold,#ffe066); font-style: italic; margin-bottom: 8px; }
-  #helpModal .rule { margin: 4px 0; }
-  #helpModal .rule b { color: var(--gold,#ffe066); }
-  #helpModal .close { margin-top: 14px; float: right; font-family: inherit; font-size: 13px; font-weight: 700;
-    color: #14101f; border: none; border-radius: 9px; padding: 8px 22px; cursor: pointer;
-    background: linear-gradient(90deg, #74c4ff, #ff8055); }
-</style>
-</head>
-<body>
-
-<header>
-  <svg width="46" height="50" viewBox="0 0 104 64" aria-hidden="true" style="flex:none;filter:drop-shadow(0 0 6px rgba(232,51,42,.5))">
-    <path d="M8 60 A 44 44 0 0 1 96 60 Z" fill="#c8102e" stroke="#7d0a1d" stroke-width="3"/>
-    <path d="M52 60 V 20 M52 36 C 41 32 33 24 31 13 M52 36 C 63 32 71 24 73 13
-             M52 47 C 39 45 27 37 23 27 M52 47 C 65 45 77 37 81 27"
-          stroke="#ffd9dd" stroke-width="3" fill="none" stroke-linecap="round"/>
-  </svg>
-  <div class="brand">
-    <div class="logo">蜘蛛纸牌 · SPIDER</div>
-    <div class="subtitle">双姝扑克 · 同花順收集 · 8 套 104 张</div>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="label">套数</div><b id="setsDone">0 / 8</b></div>
-    <div class="stat"><div class="label">步数</div><b id="moves">0</b></div>
-  </div>
-  <div class="controls">
-    <button class="mbtn" data-m="single">♥ 単色</button>
-    <button class="mbtn" data-m="four">♠ 4花色</button>
-    <span id="modeTag" style="font-size:11px;color:var(--text-dim);align-self:center"></span>
-    <button id="undoBtn" disabled>↩ 撤销</button>
-    <button id="dealBtn" title="给每列发一张新牌">🃏 发牌 ×<span id="dealLeft">5</span></button>
-    <button id="newBtn">♻ 重开</button>
-    <button id="hintBtn">💡 提示</button>
-    <button id="helpBtn">❓ 玩法</button>
-    <button id="modeBtn">🎮 玩法选择</button>
-  </div>
-</header>
-
-<div id="table"></div>
-<div id="turnBar"></div>
-
-<div id="overlay">
-  <div class="end-card">
-    <h2 id="endTitle">胜 利 ！</h2>
-    <p id="endStats">8 套全部收齐</p>
-    <p id="endNote">蜘蛛网被你拆了个干净——人类的智慧不容小觑。</p>
-    <div class="btns">
-      <button id="againBtn">再 来 一 局</button>
-      <button id="modeBtn2" class="ghost">返回玩法选择</button>
-    </div>
-  </div>
-</div>
-<div id="helpModal">
-  <div class="box">
-    <h3>蜘蛛纸牌 · 玩法说明</h3>
-    <div class="rule"><b>目标</b>：把所有牌按<b>同花色 K→A 顺序</b>凑成完整的 13 张连牌，凑齐一套会自动收走并 +100；共 8 套，全部收齐即获胜。</div>
-    <div class="rule"><b>列</b>：10 列共 104 张（単色=红桃×8 组；4 花色=整副扑克×2）。每列只有最上面一张翻开，移走它才能翻开下面一张。</div>
-    <div class="rule"><b>移动</b>：可拖动「列顶开始的同花降序连续段」（如 ♥K ♥Q ♥J，或单张）到：① 空列；② 目标列顶牌比<b>段顶牌大 1</b> 的列（如 ♥8♥7♥6 放到顶牌 ♥9/♠9 上，花色不限）。</div>
-    <div class="rule"><b>技巧</b>：先制造空列（K 开头的段只能放空列）；同花段越长越好，把散牌按同花顺序堆到一列顶上即可收套。列既可堆成 A→K 也可堆成 K→A，都能被识别收走。</div>
-    <div class="rule"><b>发牌</b>：下方「🃏 发牌」会给每列顶补一张新牌（共 5 次）。没有可动组合时先发牌；发完仍无解就「♻ 重开」。</div>
-    <div class="rule"><b>其它</b>：💡 提示帮你找可移动的组合；↩ 撤销；点击选牌后点目标列、或直接拖拽均可。</div>
-    <button class="close">知道了</button>
-  </div>
-</div>
-<div id="toast"></div>
-
-<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\/script>');</script>
-<script src="background.js"></script>
-<script src="deco.js"></script>
-
-<script>
+MAIN = '''<script>
 "use strict";
 /* ============ 素材与常量（双姝扑克全套） ============ */
 const RANK_NAME = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -347,19 +132,13 @@ function doMove(srcC, dstC) {
 }
 
 function collectAll() {
-  // 收套：列中任意位置出现 13 张同花、点数连续的窗口即收走。
-  // 列既可建成 A→K（顶小向下递增）也可建成 K→A 递减，两个方向都收。
   let found = false;
   for (let ci = 0; ci < 10; ci++) {
     const col = stacks[ci];
     for (let j = 0; j + 13 <= col.length; j++) {
-      const w = col.slice(j, j + 13);
-      if (!w.every(c => c.up && c.suit === w[0].suit)) continue;
-      const d1 = w[1].r - w[0].r;                 // 单调方向
-      if (d1 !== 1 && d1 !== -1) continue;
       let ok = true;
-      for (let i = 2; i < 13; i++) {
-        if (w[i].r - w[i - 1].r !== d1) { ok = false; break; }
+      for (let i = j + 1; i < j + 13; i++) {
+        if (!col[i].up || col[i].r !== col[i - 1].r - 1 || col[i].suit !== col[j].suit) { ok = false; break; }
       }
       if (!ok) continue;
       col.splice(j, 13);
@@ -575,10 +354,6 @@ $("hintBtn").addEventListener("click", () => {
   }, 2200);
   toast(`可把「${RANK_NAME[stacks[mv.a][0].r]}」开头的同花段放到右侧高亮列`);
 });
-$("helpBtn").addEventListener("click", () => $("helpModal").classList.add("show"));
-$("helpModal").addEventListener("click", e => {
-  if (e.target === $("helpModal") || e.target.classList.contains("close")) $("helpModal").classList.remove("show");
-});
 $("modeBtn").addEventListener("click", () => { location.href = "index.html"; });
 $("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
 $("modeBtn2").addEventListener("click", () => { location.href = "index.html"; });
@@ -601,4 +376,14 @@ document.addEventListener("pointerdown", ensureAudio, { once: true });
 })();
 </script>
 </body>
-</html>
+</html>'''
+
+includes = '''<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\\/script>');</script>
+<script src="background.js"></script>
+<script src="deco.js"></script>
+
+'''
+
+full = head + includes + MAIN
+io.open("spider.html", "w", encoding="utf-8", newline="\n").write(full)
+print("spider.html rebuilt,", full.count("\n"), "lines")
