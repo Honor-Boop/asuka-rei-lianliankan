@@ -77,7 +77,7 @@
       font-size:16px;cursor:pointer;font-family:inherit}
     #decoLight .x:hover{background:rgba(255,255,255,.22)}
 
-    #reloadFab{position:fixed;top:14px;right:96px;z-index:9;width:38px;height:38px;border-radius:50%;
+    #reloadFab{position:fixed;top:12px;left:264px;z-index:9;width:36px;height:36px;border-radius:50%;
       border:1px solid rgba(255,255,255,.3);background:rgba(18,16,43,.6);color:#fff;
       font-size:17px;cursor:pointer;font-family:inherit;
       backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
@@ -219,7 +219,10 @@
 
   // 宽屏才显示
   const mq = window.matchMedia("(min-width:" + MIN_W + "px)");
-  const apply = () => document.body.classList.toggle("deco-on", mq.matches);
+  const apply = () => {
+    document.body.classList.toggle("deco-on", mq.matches);
+    reloadBtn.style.left = mq.matches ? "264px" : "12px";  // rail 内缘空隙，不遮内容
+  };
   if (mq.addEventListener) mq.addEventListener("change", apply); else mq.addListener(apply);
   apply();
 })();
