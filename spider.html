@@ -96,6 +96,9 @@
   }
   .col.has-cards:not(.selcol) .slot-card:last-child:hover { filter: brightness(1.08); }
   .slot-card.drop-hint { box-shadow: 0 0 0 2px var(--eva-green), 0 0 14px rgba(112,255,184,.6); }
+  .col.drop-ok { border-color: rgba(112,255,184,.8); background: rgba(112,255,184,.1);
+                 box-shadow: inset 0 0 20px rgba(112,255,184,.12); }
+  .slot-card.dragging { opacity: .35; }
   .win-flash { animation: wf .7s ease-in-out; }
   @keyframes wf { 50% { box-shadow: 0 0 24px rgba(255,224,102,.9); } }
 
@@ -168,7 +171,7 @@
 </header>
 
 <div id="table"></div>
-<div id="turnBar">点击暗牌翻开 · 拖动同花順段到更大一阶的牌上 · 集齐 A→K 自动收牌</div>
+<div id="turnBar">点击暗牌翻开 · 点击选牌后点目标列，或直接拖动整段松手放置 · 集齐 A→K 自动收牌</div>
 
 <div id="overlay">
   <div class="end-card">
@@ -298,6 +301,7 @@ function render() {
         card.style.zIndex = i;
         const img = document.createElement("img");
         img.src = FACES[c.r].src;
+        img.draggable = false;
         card.appendChild(img);
         if (sel && sel.col === ci && i >= sel.depth) card.classList.add("sel");
         y += step || 4;
@@ -306,6 +310,15 @@ function render() {
       card.dataset.ci = ci;
       card.dataset.depth = i;
       card.addEventListener("click", () => onClick(ci, i, col[i].up));
+      if (c.up && i === col.length - 1) {
+        card.draggable = true;
+        card.addEventListener("dragstart", e => onDragStart(e, ci));
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          if (sel && sel.col === ci) sel = null;
+          render();
+        });
+      }
       box.appendChild(card);
     }
     // 空列槽位
@@ -318,6 +331,27 @@ function render() {
       slot.addEventListener("click", () => onClick(ci, 0, false));
       box.appendChild(slot);
     }
+    box.addEventListener("dragover", e => {
+      if (sel && canMove(sel.col, ci)) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        box.classList.add("drop-ok");
+      }
+    });
+    box.addEventListener("dragleave", () => box.classList.remove("drop-ok"));
+    box.addEventListener("drop", e => {
+      e.preventDefault();
+      box.classList.remove("drop-ok");
+      if (!sel) return;
+      const sc = sel.col;
+      if (canMove(sc, ci)) {
+        doMove(sc, ci);
+        toast("已放置");
+      } else {
+        toast("不能放到这里");
+      }
+      sel = null;
+    });
     tableEl.appendChild(box);
   });
   $("dealBtn").disabled = reserve.length === 0;
@@ -339,6 +373,19 @@ function segLen(col) {
     if (col[i].r === col[i + 1].r + 1) n++; else break;
   }
   return n;
+}
+
+function onDragStart(e, ci) {
+  const col = stacks[ci];
+  if (!col.length || !col[col.length - 1].up) { e.preventDefault(); return; }
+  const segStart = col.length - segLen(col);
+  sel = { col: ci, depth: segStart };
+  e.dataTransfer.setData("text/plain", String(ci));
+  e.dataTransfer.effectAllowed = "move";
+  const img = e.target && e.target.tagName === "IMG" ? e.target
+            : (e.currentTarget ? e.currentTarget.querySelector("img") : null);
+  if (img) e.dataTransfer.setDragImage(img, Math.min(60, img.width / 2), Math.min(90, img.height / 2));
+  e.currentTarget.classList.add("dragging");
 }
 
 function canMove(srcC, dstC) {
