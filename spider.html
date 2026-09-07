@@ -414,19 +414,27 @@ function render() {
     const box = document.createElement("div");
     box.className = "col" + (sel && sel.col === ci ? " selcol" : "");
     box.style.height = colH + "px";
+    // 经典视觉：翻开牌互相露出约 1/4 上缘(34px)；盖牌堆整体从最后一张
+    // 翻开牌的底边之下开始、彼此细密堆叠(7px)，不遮挡任何翻开牌主体
+    const cardH = Math.round((tableEl.clientWidth - 9 * 6) / 10 * 1.5);
     const tops2 = [];
     let y2 = 4;
     for (let i = 0; i < col.length; i++) {
       tops2[i] = y2;
-      if (i < col.length - 1) y2 += (col[i + 1].up ? 24 : 8);
+      if (i < col.length - 1) {
+        if (col[i + 1].up) y2 += 34;                 // 明-明：露上缘 34px
+        else if (col[i].up) y2 += cardH;             // 明→盖：盖堆从明牌底边之下开始
+        else y2 += 7;                                // 盖-盖：细密堆叠
+      }
     }
     for (let i = 0; i < col.length; i++) {
       const c = col[i];
       const card = document.createElement("div");
       card.className = "slot-card";
       card.style.top = tops2[i] + "px";
-      card.style.zIndex = i;   // 越靠下（后放）的牌越前置：盖住上方牌的下部，
-                             // 让每张牌露出上缘（经典牌叠视觉）
+      // 翻开牌：z=100+i（翻开之间下方牌盖上方牌，露出上缘 34px）
+      // 盖牌：z=i（始终低于翻开牌，仅在列底以细堆呈现，不遮挡翻开牌主体）
+      card.style.zIndex = (c.up ? 100 : 0) + i;
       if (!c.up) {
         card.classList.add("face-down");
         const img = document.createElement("img");
