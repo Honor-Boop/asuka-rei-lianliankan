@@ -425,7 +425,7 @@ function render() {
       const card = document.createElement("div");
       card.className = "slot-card";
       card.style.top = tops2[i] + "px";
-      card.style.zIndex = i;
+      card.style.zIndex = col.length - i;   // 越靠上的牌越前置，否则下方牌会盖住翻开的牌
       if (!c.up) {
         card.classList.add("face-down");
         const img = document.createElement("img");
