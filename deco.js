@@ -77,13 +77,29 @@
       font-size:16px;cursor:pointer;font-family:inherit}
     #decoLight .x:hover{background:rgba(255,255,255,.22)}
 
-    #reloadFab{position:fixed;top:12px;left:264px;z-index:9;width:36px;height:36px;border-radius:50%;
-      border:1px solid rgba(255,255,255,.3);background:rgba(18,16,43,.6);color:#fff;
-      font-size:17px;cursor:pointer;font-family:inherit;
-      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-      box-shadow:0 2px 10px rgba(0,0,0,.4);transition:all .15s}
-    #reloadFab:hover{background:rgba(255,224,102,.25);border-color:rgba(255,224,102,.9);
-      transform:rotate(90deg)}
+    /* EVA 风格刷新钮（左栏 NERV 徽章下方） */
+    .deco-reload{display:flex;align-items:center;justify-content:center;gap:7px;
+      width:182px;height:32px;border-radius:6px;cursor:pointer;pointer-events:auto;
+      background:linear-gradient(180deg,rgba(112,255,184,.14),rgba(112,255,184,.03));
+      border:1px solid rgba(112,255,184,.55);
+      color:#70ffb8;font-family:Consolas,'Courier New',monospace;
+      font-size:10.5px;letter-spacing:2px;transition:all .15s;position:relative}
+    .deco-reload::before{content:"";position:absolute;inset:3px;border:1px solid rgba(112,255,184,.18);
+      border-radius:4px;pointer-events:none}
+    .deco-reload .ico{display:inline-block;font-size:14px;line-height:1;transition:transform .4s}
+    .deco-reload:hover{background:rgba(112,255,184,.22);border-color:#70ffb8;
+      box-shadow:0 0 14px rgba(112,255,184,.4)}
+    .deco-reload:hover .ico{transform:rotate(360deg)}
+    .deco-reload .st{color:rgba(112,255,184,.55);font-size:8px;letter-spacing:1px;
+      border-left:1px solid rgba(112,255,184,.35);padding-left:7px}
+    /* 窄屏回退悬浮圆钮 */
+    #reloadFab{position:fixed;bottom:16px;left:14px;z-index:9;width:38px;height:38px;border-radius:50%;
+      border:1px solid rgba(112,255,184,.6);background:rgba(18,16,43,.75);color:#70ffb8;
+      font-size:17px;cursor:pointer;font-family:inherit;display:none;
+      box-shadow:0 2px 10px rgba(0,0,0,.4);transition:all .15s;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+    #reloadFab:hover{background:rgba(112,255,184,.22);transform:rotate(90deg)}
+    @media (max-width:1299px){#reloadFab{display:block}}
     .lightband{position:fixed;top:0;bottom:0;width:170px;z-index:0;pointer-events:none}
     .lightband.l{left:252px;background:linear-gradient(90deg,rgba(180,140,255,.14),rgba(180,140,255,0))}
     .lightband.r{right:252px;background:linear-gradient(270deg,rgba(255,128,85,.12),rgba(255,128,85,0))}
@@ -131,6 +147,9 @@
     <div class="deco-item">${nervEmblem}
       <div class="nerv-word">NERV</div>
       <div class="motto">God's in his heaven.<br>All's right with the world.</div>
+      <button class="deco-reload" title="刷新页面（重新加载最新版本）">
+        <span class="ico">⟳</span>RELOAD<span class="st">再読込</span>
+      </button>
     </div>
     ${galleryHtml(1, 2)}
     <div class="deco-item"><div class="stripe"></div></div>
@@ -209,19 +228,21 @@
     boxEl.classList.toggle("berserk", berserk);
   }, 620);
 
-  // 悬浮刷新按钮（一键重载最新页面）
+  // 刷新按钮（左栏 EVA 组件 + 窄屏悬浮圆钮回退）
   const reloadBtn = document.createElement("button");
   reloadBtn.id = "reloadFab";
   reloadBtn.title = "刷新页面（重新加载最新版本）";
   reloadBtn.textContent = "⟳";
-  reloadBtn.addEventListener("click", () => location.reload());
   document.body.appendChild(reloadBtn);
+  const doReload = () => location.reload();
+  reloadBtn.addEventListener("click", doReload);
+  document.querySelectorAll(".deco-reload").forEach(b => b.addEventListener("click", doReload));
 
   // 宽屏才显示
   const mq = window.matchMedia("(min-width:" + MIN_W + "px)");
   const apply = () => {
     document.body.classList.toggle("deco-on", mq.matches);
-    reloadBtn.style.left = mq.matches ? "264px" : "12px";  // rail 内缘空隙，不遮内容
+    // reload 按钮：宽屏走 rail 内组件，窄屏走悬浮回退（CSS media 控制）
   };
   if (mq.addEventListener) mq.addEventListener("change", apply); else mq.addListener(apply);
   apply();
