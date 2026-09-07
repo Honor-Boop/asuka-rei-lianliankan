@@ -151,34 +151,37 @@
     100% { transform: translate(-50%, -46px) scale(1); opacity: 0; }
   }
 
-  /* ---------- 结算 ---------- */
+  /* ---------- 结算（贴底横幅，尽量露出背景） ---------- */
   #overlay {
-    position: absolute; inset: 0; z-index: 10;
-    display: none; align-items: center; justify-content: center;
-    background: rgba(10, 6, 20, 0.72);
-    backdrop-filter: blur(6px);
-    border-radius: 14px;
+    position: fixed; inset: 0; z-index: 10;
+    display: none; align-items: flex-end; justify-content: center;
+    background: rgba(8, 5, 18, 0.12);
+    padding-bottom: 7vh;
   }
   #overlay.show { display: flex; }
   .end-card {
     text-align: center;
-    background: rgba(34, 25, 66, 0.92);
-    border: 1px solid var(--panel-border);
-    border-radius: 18px;
-    padding: 30px 44px;
-    box-shadow: 0 10px 60px rgba(0,0,0,0.6);
+    max-width: 900px;
+    width: calc(100vw - 40px);
+    background: linear-gradient(160deg, rgba(27, 21, 68, 0.55), rgba(20, 14, 36, 0.5));
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 16px;
+    padding: 12px 22px 14px;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
   }
-  .end-card h2 { font-size: 26px; font-style: italic; letter-spacing: 2px; margin-bottom: 10px; }
+  .end-card h2 { font-size: 19px; margin-bottom: 2px; }
   .end-card h2.win { background: linear-gradient(90deg, var(--rei), var(--asuka)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .end-card h2.lose { color: var(--eva-red); text-shadow: 0 0 16px rgba(255,90,60,.5); }
   .end-card h2.draw { color: var(--gold); text-shadow: 0 0 16px rgba(255,213,74,.5); }
-  .end-card p { color: var(--text-dim); font-size: 14px; margin: 4px 0; }
+  .end-card p { color: var(--text-dim); font-size: 12.5px; margin: 1.5px 0; }
   .end-card p b { color: var(--gold); }
-  .end-card .btns { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .end-card .btns { display: flex; gap: 8px; justify-content: center; margin-top: 7px; flex-wrap: wrap; }
   .end-card button {
-    font-family: inherit; font-size: 14px; font-weight: 700; color: #14101f;
+    font-family: inherit; font-size: 13px; font-weight: 700; color: #14101f;
     background: linear-gradient(90deg, var(--rei), var(--asuka));
-    border: none; border-radius: 10px; padding: 10px 24px; cursor: pointer;
+    border: none; border-radius: 10px; padding: 7px 18px; cursor: pointer;
   }
   .end-card button.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); font-weight: 400; }
 
