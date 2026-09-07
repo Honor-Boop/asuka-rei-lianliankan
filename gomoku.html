@@ -320,8 +320,8 @@ function renderCell(i) {
 
 function layout() {
   const headerH = document.querySelector("header").offsetHeight;
-  const avail = Math.min(window.innerHeight - headerH - 150, window.innerWidth - 60, 620);
-  cell = Math.max(30, Math.min(58, Math.floor((avail - 16 - 8 * 4) / 9)));
+  const avail = Math.min(window.innerHeight - headerH - 150, window.innerWidth - 60, 860);
+  cell = Math.max(30, Math.min(84, Math.floor((avail - 16 - 8 * 4) / 9)));
   document.documentElement.style.setProperty("--cell", cell + "px");
 }
 

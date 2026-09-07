@@ -8,9 +8,9 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    .deco-rail{position:fixed;top:0;bottom:0;width:150px;z-index:0;pointer-events:none;
+    .deco-rail{position:fixed;top:0;bottom:0;width:252px;z-index:0;pointer-events:none;
       display:none;flex-direction:column;justify-content:space-between;align-items:center;
-      padding:16px 6px;font-family:Consolas,'Courier New',monospace;color:#b9b0d6;opacity:1}
+      padding:16px 12px;font-family:Consolas,'Courier New',monospace;color:#b9b0d6;opacity:1}
     body.deco-on .deco-rail{display:flex}
     .deco-rail.left{left:0;border-right:1px dashed rgba(255,255,255,.07)}
     .deco-rail.right{right:0;border-left:1px dashed rgba(255,255,255,.07)}
@@ -20,16 +20,16 @@
     .vtext{display:flex;gap:12px;writing-mode:vertical-rl;font-family:"Microsoft YaHei",sans-serif;
       font-size:13px;letter-spacing:8px;color:rgba(255,255,255,.5);padding:6px 0}
     .vtext b{color:rgba(255,255,255,.75);font-weight:600}
-    .stripe{width:104px;height:12px;border-radius:3px;opacity:.7;
+    .stripe{width:180px;height:12px;border-radius:3px;opacity:.7;
       background:repeating-linear-gradient(-45deg,#f5c518 0 9px,#191423 9px 18px)}
-    .chip{font-size:10px;letter-spacing:1px;padding:4px 9px;border:1px solid rgba(88,255,163,.4);
+    .chip{font-size:11px;letter-spacing:1px;padding:6px 12px;border:1px solid rgba(88,255,163,.4);
       border-radius:6px;color:#58ffa3;display:flex;gap:6px;align-items:center;background:rgba(88,255,163,.05)}
     .chip .dot{width:6px;height:6px;border-radius:50%;background:#58ffa3;animation:blink 1.6s steps(2) infinite}
     @keyframes blink{50%{opacity:.15}}
     .tiny{font-size:8px;letter-spacing:2px;color:rgba(255,255,255,.5)}
-    .barcode{width:88px;height:20px;opacity:.65;
+    .barcode{width:160px;height:20px;opacity:.65;
       background:repeating-linear-gradient(90deg,#cfc8e8 0 2px,transparent 2px 5px,#cfc8e8 5px 6px,transparent 6px 11px,#cfc8e8 11px 14px,transparent 14px 17px)}
-    .nerv-word{font-weight:900;font-style:italic;font-size:19px;letter-spacing:5px;color:#e8332a;
+    .nerv-word{font-weight:900;font-style:italic;font-size:24px;letter-spacing:5px;color:#e8332a;
       text-shadow:0 0 14px rgba(232,51,42,.45);font-family:"Segoe UI",sans-serif}
     .motto{font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,.55);line-height:1.7;text-transform:uppercase}
     .sync-box{position:relative;border:1px solid rgba(88,255,163,.35);border-radius:10px;
@@ -57,12 +57,12 @@
       .sync-box .ring,.chip .dot,.magi .node.pulse svg,.atf svg,.sync-box.berserk{animation:none}
     }
     .deco-gallery{display:flex;flex-direction:column;align-items:center;gap:9px}
-    .gal-title{font-size:8px;letter-spacing:2px;color:#c9a6ff;opacity:.9;font-family:Consolas,monospace}
-    .deco-card{position:relative;width:132px;height:172px;padding:0;overflow:hidden;
-      border:1px solid rgba(201,166,255,.45);border-radius:10px;background:#14101f;
-      cursor:zoom-in;pointer-events:auto;display:block;box-shadow:0 3px 12px rgba(0,0,0,.45);
+    .gal-title{font-size:9px;letter-spacing:2px;color:#c9a6ff;opacity:.9;font-family:Consolas,monospace}
+    .deco-card{position:relative;width:196px;height:298px;padding:0;overflow:hidden;
+      border:1px solid rgba(201,166,255,.45);border-radius:12px;background:#14101f;
+      cursor:zoom-in;pointer-events:auto;display:block;box-shadow:0 4px 16px rgba(0,0,0,.5);
       transition:transform .18s,box-shadow .18s,border-color .18s;font-family:inherit}
-    .deco-card img{width:100%;height:100%;object-fit:cover;object-position:center 12%;display:block}
+    .deco-card img{width:100%;height:100%;object-fit:cover;object-position:center 15%;display:block}
     .deco-card:hover{transform:scale(1.06);border-color:#e6c9ff;box-shadow:0 0 18px rgba(201,166,255,.55)}
     .deco-card .tag{position:absolute;left:0;right:0;bottom:0;font-size:9px;letter-spacing:1.5px;
       color:#fff;text-align:center;padding:16px 2px 5px;font-family:Consolas,monospace;
@@ -76,11 +76,15 @@
       border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;
       font-size:16px;cursor:pointer;font-family:inherit}
     #decoLight .x:hover{background:rgba(255,255,255,.22)}
+
+    .lightband{position:fixed;top:0;bottom:0;width:170px;z-index:0;pointer-events:none}
+    .lightband.l{left:252px;background:linear-gradient(90deg,rgba(180,140,255,.14),rgba(180,140,255,0))}
+    .lightband.r{right:252px;background:linear-gradient(270deg,rgba(255,128,85,.12),rgba(255,128,85,0))}
   `;
   document.head.appendChild(style);
 
   const nervEmblem = `
-    <svg width="100" height="60" viewBox="0 0 104 64" aria-hidden="true">
+    <svg width="150" height="90" viewBox="0 0 104 64" aria-hidden="true">
       <path d="M8 60 A 44 44 0 0 1 96 60 Z" fill="#c8102e" stroke="#7d0a1d" stroke-width="2"/>
       <path d="M52 60 V 20 M52 36 C 41 32 33 24 31 13 M52 36 C 63 32 71 24 73 13
                M52 47 C 39 45 27 37 23 27 M52 47 C 65 45 77 37 81 27"
@@ -136,18 +140,14 @@
     <div class="deco-item magi">
       ${tri(true, "MELCHIOR")}${tri(false, "BALTHASAR")}${tri(false, "CASPER")}
       <div class="tiny">MAGI SYSTEM · 3 NODES</div>
-    </div>
-    <div class="deco-item atf">
-      <svg width="118" height="82" viewBox="0 0 120 84" aria-hidden="true">
-        <g fill="none" stroke="#ffb300" stroke-width="1.6">
-          <polygon points="86,42 73,19.5 47,19.5 34,42 47,64.5 73,64.5"/>
-          <polygon points="108,62 101.5,50.7 88.5,50.7 82,62 88.5,73.3 101.5,73.3" opacity=".8"/>
-          <polygon points="38,18 33,9.3 23,9.3 18,18 23,26.7 33,26.7" opacity=".6"/>
-        </g>
-      </svg>
-      <div class="lab">A.T. FIELD ACTIVE</div>
     </div>`;
 
+  const bandL = document.createElement("div");
+  bandL.className = "lightband l";
+  const bandR = document.createElement("div");
+  bandR.className = "lightband r";
+  document.body.appendChild(bandL);
+  document.body.appendChild(bandR);
   document.body.appendChild(left);
   document.body.appendChild(right);
 
