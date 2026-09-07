@@ -12,6 +12,10 @@ Bind 127.0.0.1 only: upload/delete are trusted for the local user.
 import http.server
 import json
 import os
+import subprocess
+import sys
+import threading
+import time
 import urllib.parse
 from pathlib import Path
 
@@ -96,6 +100,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/api/restart":
+            # 刷新程序：异步重启本地服务进程（拉取磁盘最新代码）
+            self.send_json({"ok": True, "msg": "restarting"})
+            threading.Timer(0.5, restart_server).start()
+            return
         if parsed.path != "/api/upload":
             return self.send_json({"ok": False, "error": "unknown endpoint"}, 404)
         q = urllib.parse.parse_qs(parsed.query)
@@ -142,7 +151,20 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self.send_json({"ok": True, "count": len(manifest)})
 
 
+def restart_server():
+    """自我重启：先起新实例，旧实例随后退出（allow_reuse_address 使重绑快速生效）。"""
+    try:
+        flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        subprocess.Popen([sys.executable, str(ROOT / "serve.py")],
+                         cwd=str(ROOT), creationflags=flags)
+    except Exception:
+        pass
+    time.sleep(0.6)
+    os._exit(0)
+
+
 if __name__ == "__main__":
     write_manifest()  # 启动时校准一次
-    with http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler) as httpd:
-        httpd.serve_forever()
+    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    httpd.daemon_threads = True
+    httpd.serve_forever()

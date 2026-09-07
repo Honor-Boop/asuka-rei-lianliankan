@@ -148,7 +148,7 @@
       <div class="nerv-word">NERV</div>
       <div class="motto">God's in his heaven.<br>All's right with the world.</div>
       <button class="deco-reload" title="刷新页面（重新加载最新版本）">
-        <span class="ico">⟳</span>RELOAD<span class="st">再読込</span>
+        <span class="ico">⟳</span>RESTART<span class="st">再起動</span>
       </button>
     </div>
     ${galleryHtml(1, 2)}
@@ -234,9 +234,20 @@
   reloadBtn.title = "刷新页面（重新加载最新版本）";
   reloadBtn.textContent = "⟳";
   document.body.appendChild(reloadBtn);
-  const doReload = () => location.reload();
-  reloadBtn.addEventListener("click", doReload);
-  document.querySelectorAll(".deco-reload").forEach(b => b.addEventListener("click", doReload));
+  // 刷新程序：请求本地服务自重启（拉取最新代码），完成后刷新页面
+  let restarting = false;
+  const doRestart = async (btn) => {
+    if (restarting) return;
+    restarting = true;
+    const label = btn ? btn.textContent : "";
+    if (btn) btn.textContent = label.replace("RESTART", "RESTARTING").replace("再起動", "再起動中");
+    try {
+      await fetch("api/restart", { method: "POST" });
+    } catch (e) { /* 服务重启中连接会断，属正常 */ }
+    setTimeout(() => location.reload(), 1400);
+  };
+  reloadBtn.addEventListener("click", () => doRestart(reloadBtn));
+  document.querySelectorAll(".deco-reload").forEach(b => b.addEventListener("click", () => doRestart(b)));
 
   // 宽屏才显示
   const mq = window.matchMedia("(min-width:" + MIN_W + "px)");
