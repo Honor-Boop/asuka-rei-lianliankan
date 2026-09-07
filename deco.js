@@ -101,6 +101,32 @@
     #reloadFab:hover{background:rgba(112,255,184,.22);transform:rotate(90deg)}
     @media (max-width:1299px){#reloadFab{display:block}}
     .lightband{position:fixed;top:0;bottom:0;width:170px;z-index:0;pointer-events:none}
+    #updChip{position:fixed;right:14px;bottom:34px;z-index:6;display:flex;align-items:center;gap:6px;
+      font-size:11px;letter-spacing:1px;color:rgba(236,232,247,.72);cursor:pointer;
+      background:rgba(18,16,43,.6);border:1px solid rgba(255,255,255,.22);border-radius:9px;
+      padding:4px 10px;font-family:Consolas,monospace;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:all .15s;
+      pointer-events:auto}
+    #updChip:hover{border-color:var(--gold,#ffe066);color:#fff}
+    #updChip .dot{width:6px;height:6px;border-radius:50%;background:var(--eva-green,#70ffb8);display:none}
+    #updChip.has-update .dot{display:block;animation:blink 1s steps(2) infinite;background:var(--gold,#ffe066)}
+    #updChip.has-update{color:var(--gold,#ffe066);border-color:rgba(255,224,102,.6)}
+    @keyframes blink{50%{opacity:.2}}
+    #updModal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;
+      background:rgba(8,5,18,.55);backdrop-filter:blur(4px)}
+    #updModal.show{display:flex}
+    #updModal .box{text-align:center;max-width:480px;background:rgba(34,25,66,.94);
+      border:1px solid rgba(255,224,102,.45);border-radius:14px;padding:22px 28px;
+      box-shadow:0 0 0 1px rgba(255,224,102,.15),0 10px 50px rgba(0,0,0,.6)}
+    #updModal h3{font-size:17px;letter-spacing:2px;margin-bottom:6px;color:var(--gold,#ffe066);
+      font-style:italic}
+    #updModal p{font-size:12.5px;color:rgba(236,232,247,.85);line-height:1.7;margin:4px 0}
+    #updModal .btns{display:flex;gap:10px;justify-content:center;margin-top:14px}
+    #updModal button{font-family:inherit;font-size:13px;font-weight:700;color:#14101f;cursor:pointer;
+      border:none;border-radius:9px;padding:8px 20px;
+      background:linear-gradient(90deg,#74c4ff,#ff8055)}
+    #updModal button.ghost{background:rgba(255,255,255,.1);color:#fff;font-weight:400;
+      border:1px solid rgba(255,255,255,.25)}
     .lightband.l{left:252px;background:linear-gradient(90deg,rgba(180,140,255,.14),rgba(180,140,255,0))}
     .lightband.r{right:252px;background:linear-gradient(270deg,rgba(255,128,85,.12),rgba(255,128,85,0))}
 
@@ -248,6 +274,58 @@
   };
   reloadBtn.addEventListener("click", () => doRestart(reloadBtn));
   document.querySelectorAll(".deco-reload").forEach(b => b.addEventListener("click", () => doRestart(b)));
+
+  // ---------- 版本检查与在线更新 ----------
+  const updChip = document.createElement("button");
+  updChip.id = "updChip";
+  updChip.title = "检查更新";
+  updChip.innerHTML = '<span class="dot"></span><span class="v">v--</span>';
+  document.body.appendChild(updChip);
+
+  const updModal = document.createElement("div");
+  updModal.id = "updModal";
+  updModal.innerHTML = `<div class="box">
+      <h3>发现新版本</h3>
+      <p id="updText">正在检查……</p>
+      <div class="btns">
+        <button class="ok" id="updGo">去下载安装</button>
+        <button class="ghost" id="updClose">暂不更新</button>
+      </div>
+    </div>`;
+  document.body.appendChild(updModal);
+
+  async function checkUpdate() {
+    try {
+      const r = await fetch("api/update-check");
+      const d = await r.json();
+      if (!d.ok) { updChip.querySelector(".v").textContent = "检查失败"; return; }
+      updChip.querySelector(".v").textContent = d.current;
+      if (d.update && d.url) {
+        updChip.classList.add("has-update");
+        updChip.title = "发现新版 " + d.latest + "，点击更新";
+        updModal.querySelector("#updText").textContent =
+          "当前版本 " + d.current + "，最新 " + d.latest + "。 下载安装包后覆盖安装即可（存档与图库保留）。";
+        const go = updModal.querySelector("#updGo");
+        go.onclick = () => { window.open(d.url, "_blank"); updModal.classList.remove("show"); };
+      }
+      return d;
+    } catch (e) {
+      updChip.querySelector(".v").textContent = "离线";
+      return null;
+    }
+  }
+  updChip.addEventListener("click", async () => {
+    const d = await checkUpdate();
+    if (!d) { updChip.querySelector(".v").textContent = "检查失败"; return; }
+    if (d.update && d.url) updModal.classList.add("show");
+    else {
+      updChip.querySelector(".v").textContent = d.current + " ✓最新";
+      setTimeout(() => { updChip.querySelector(".v").textContent = d.current; }, 1800);
+    }
+  });
+  updModal.querySelector("#updClose").addEventListener("click", () => updModal.classList.remove("show"));
+  updModal.addEventListener("click", e => { if (e.target === updModal) updModal.classList.remove("show"); });
+  setTimeout(checkUpdate, 2500);   // 载入后自动静默检测一次
 
   // 宽屏才显示
   const mq = window.matchMedia("(min-width:" + MIN_W + "px)");

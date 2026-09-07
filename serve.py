@@ -17,6 +17,7 @@ import sys
 import threading
 import time
 import urllib.parse
+import urllib.request
 from pathlib import Path
 
 from PIL import Image
@@ -50,6 +51,32 @@ def build_manifest():
             "res": "%dx%d" % (w, h),
         })
     return items
+
+
+VERSION = "v1.1.2"   # 与 GitHub Release tag 同步
+GITHUB_API = "https://api.github.com/repos/Honor-Boop/asuka-rei-lianliankan/releases/latest"
+
+
+def check_update():
+    """查询 GitHub 最新 Release，返回是否有新版与下载地址。"""
+    try:
+        req = urllib.request.Request(GITHUB_API, headers={
+            "User-Agent": "eva-minigames-updater", "Accept": "application/vnd.github+json"})
+        with urllib.request.urlopen(req, timeout=6) as r:
+            d = json.load(r)
+        tag = d.get("tag_name") or ""
+        url = None
+        for a in d.get("assets") or []:
+            n = a.get("name") or ""
+            if n.lower().endswith(".exe") and "setup" in n.lower():
+                url = a.get("browser_download_url") or None
+                break
+        if not url and d.get("assets"):
+            url = d["assets"][0].get("browser_download_url") or None
+        return {"ok": True, "latest": tag, "current": VERSION,
+                "update": tag != VERSION and tag != "", "url": url}
+    except Exception as e:
+        return {"ok": False, "error": type(e).__name__}
 
 
 def write_manifest():
@@ -96,6 +123,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/list":
             return self.send_json(build_manifest())
+        if path == "/api/version":
+            return self.send_json({"version": VERSION})
+        if path == "/api/update-check":
+            return self.send_json(check_update())
         super().do_GET()
 
     def do_POST(self):
