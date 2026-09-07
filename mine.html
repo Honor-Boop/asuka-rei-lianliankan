@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>使徒扫雷 · 明日香 × 绫波丽</title>
+<style>
+  :root {
+    --bg1: #2c2256; --bg2: #1b1544;
+    --panel: rgba(255,255,255,.11); --panel-border: rgba(255,255,255,.24);
+    --rei: #74c4ff; --asuka: #ff8055; --gold: #ffe066;
+    --eva-green: #70ffb8; --eva-red: #ff5a3c; --text: #fff; --text-dim: #c9c2ea;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(88,182,255,.16), transparent 60%),
+      radial-gradient(1000px 700px at 12% 110%, rgba(255,106,61,.15), transparent 60%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 8px 18px;
+    user-select: none; -webkit-user-select: none;
+  }
+  header {
+    width: 100%; max-width: 1080px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 4px 6px 10px;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .logo {
+    font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--rei), #b48cff 55%, var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.05;
+  }
+  .subtitle { font-size: 11px; color: var(--text-dim); letter-spacing: 3px; margin-top: 2px; }
+  .stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 4px 12px; text-align: center; min-width: 64px;
+  }
+  .stat .label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+  .stat b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  #minesLeft b { color: var(--eva-red); }
+  #timeStat b { color: var(--gold); }
+  .controls { display: flex; gap: 7px; width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .controls button {
+    font-family: inherit; font-size: 12.5px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 9px; padding: 6px 12px; cursor: pointer; transition: all .15s;
+  }
+  .controls button:hover { background: rgba(255,255,255,.18); }
+  .controls button.active {
+    border-color: var(--gold); color: var(--gold);
+    box-shadow: 0 0 12px rgba(255,224,102,.25);
+  }
+  .controls .sep { width: 1px; background: var(--panel-border); margin: 0 2px; }
+
+  /* ---------- 棋盘 ---------- */
+  #boardWrap { position: relative; margin-top: 4px; }
+  #grid {
+    display: grid;
+    gap: 3px;
+    padding: 6px;
+    margin: 0 auto;
+    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+  }
+  .cell {
+    width: var(--cs); height: var(--cs);
+    border-radius: 5px;
+    background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,255,255,.22);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: calc(var(--cs) * .55);
+    font-variant-numeric: tabular-nums;
+    transition: background .1s, transform .05s;
+  }
+  .cell:hover:not(.open):not(.dead) { background: rgba(255,255,255,.26); }
+  .cell:active:not(.open) { transform: scale(.94); }
+  .cell.open {
+    background: rgba(255,255,255,.045);
+    border-color: rgba(255,255,255,.06);
+    cursor: default;
+  }
+  .cell.open.zero { background: rgba(255,255,255,.02); }
+  .cell .n1 { color: #6ec9ff; } .cell .n2 { color: #70ffb8; }
+  .cell .n3 { color: #ff7057; } .cell .n4 { color: #c9a6ff; }
+  .cell .n5 { color: #ffb347; } .cell .n6 { color: #ff9ec4; }
+  .cell .n7 { color: #e8f6ff; } .cell .n8 { color: #b9b0d6; }
+  .cell .flag {
+    color: var(--eva-red);
+    font-size: calc(var(--cs) * .52);
+    text-shadow: 0 0 8px rgba(255,90,60,.7);
+  }
+  .cell .mine {
+    color: #ffd54a;
+    font-size: calc(var(--cs) * .5);
+    animation: boom .35s ease-out;
+  }
+  @keyframes boom { 50% { transform: scale(1.7); } }
+  .cell.hit-mine { background: var(--eva-red); border-color: #fff; animation: shake .3s; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); } 75% { transform: translateX(4px); }
+  }
+  .cell.wrong-flag { background: rgba(255,90,60,.35); }
+  .cell .avatar {
+    width: calc(var(--cs) * .62); height: calc(var(--cs) * .62);
+    border-radius: 50%; object-fit: cover; pointer-events: none;
+  }
+  .cell .p1 { border: 2px solid var(--rei); }
+  .cell .p2 { border: 2px solid var(--asuka); }
+
+  #turnBar { margin-top: 6px; min-height: 20px; font-size: 12.5px; color: var(--text-dim); text-align: center; }
+  #turnBar b { color: var(--gold); }
+
+  /* 全屏警报（踩雷/胜利提示） */
+  #alarm {
+    position: fixed; inset: 0; z-index: 45; display: none;
+    align-items: center; justify-content: center; pointer-events: none;
+  }
+  #alarm.go { display: flex; }
+  #alarm .banner {
+    font-size: clamp(30px, 6vw, 64px); font-weight: 900; font-style: italic;
+    letter-spacing: 8px; color: var(--eva-red);
+    text-shadow: 0 0 26px rgba(255,90,60,.9), 0 0 60px rgba(255,60,30,.6);
+    animation: alarmPulse 1s ease-in-out infinite;
+  }
+  #alarm.ok .banner { color: var(--eva-green); text-shadow: 0 0 26px rgba(112,255,184,.9); }
+  @keyframes alarmPulse { 50% { opacity: .55; transform: scale(1.04); } }
+  #alarm .sub {
+    position: absolute; bottom: 18vh; left: 0; right: 0; text-align: center;
+    font-size: 14px; letter-spacing: 4px; color: #fff;
+  }
+  #redFlash { position: fixed; inset: 0; z-index: 44; pointer-events: none; opacity: 0;
+    background: radial-gradient(circle, rgba(255,80,40,.25), rgba(200,20,10,.5)); }
+  #redFlash.go { animation: redOut .8s ease-out forwards; }
+  @keyframes redOut { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* ---------- 结算（贴底横幅） ---------- */
+  #overlay {
+    position: fixed; inset: 0; z-index: 40;
+    display: none; align-items: flex-end; justify-content: center;
+    background: rgba(8,5,18,.12); padding-bottom: 7vh;
+  }
+  #overlay.show { display: flex; }
+  .end-card {
+    text-align: center; max-width: 820px; width: calc(100vw - 40px);
+    background: linear-gradient(160deg, rgba(27,21,68,.55), rgba(20,14,36,.5));
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,.28);
+    border-radius: 16px; padding: 12px 22px 14px; box-shadow: 0 6px 30px rgba(0,0,0,.35);
+  }
+  .end-card h2 { font-size: 19px; margin-bottom: 2px; font-style: italic; letter-spacing: 2px; }
+  .end-card h2.win {
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .end-card h2.lose { color: var(--eva-red); text-shadow: 0 0 16px rgba(255,90,60,.5); }
+  .end-card p { color: var(--text-dim); font-size: 12.5px; margin: 1.5px 0; }
+  .end-card p b { color: var(--gold); }
+  .end-card .btns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+  .end-card button {
+    font-family: inherit; font-size: 13px; font-weight: 700; color: #14101f;
+    background: linear-gradient(90deg, var(--rei), var(--asuka));
+    border: none; border-radius: 9px; padding: 7px 18px; cursor: pointer;
+  }
+  .end-card button.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--panel-border); font-weight: 400; }
+  #toast {
+    position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px);
+    background: rgba(34,25,66,.95); border: 1px solid var(--panel-border);
+    color: var(--text); padding: 8px 16px; border-radius: 9px; font-size: 13px;
+    opacity: 0; transition: all .25s; z-index: 60; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="46" height="50" viewBox="0 0 104 64" aria-hidden="true" style="flex:none;filter:drop-shadow(0 0 6px rgba(232,51,42,.5))">
+    <path d="M8 60 A 44 44 0 0 1 96 60 Z" fill="#c8102e" stroke="#7d0a1d" stroke-width="3"/>
+    <path d="M52 60 V 20 M52 36 C 41 32 33 24 31 13 M52 36 C 63 32 71 24 73 13
+             M52 47 C 39 45 27 37 23 27 M52 47 C 65 45 77 37 81 27"
+          stroke="#ffd9dd" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="brand">
+    <div class="logo">使徒扫雷 · MINESWEEPER</div>
+    <div class="subtitle">明日香 × 绫波丽 · 使徒掃海作戦</div>
+  </div>
+  <div class="stats">
+    <div class="stat" id="minesLeft"><div class="label">☢ 使徒余量</div><b>0</b></div>
+    <div class="stat" id="timeStat"><div class="label">时间</div><b>000</b></div>
+    <div class="stat"><div class="label">最佳</div><b id="bestVal">--</b></div>
+  </div>
+  <div class="controls">
+    <button data-d="easy">見習い 9×9</button>
+    <button data-d="normal">正規隊員 16×16</button>
+    <button data-d="hard">使徒級·S2 99×99</button>
+    <span class="sep"></span>
+    <button id="newBtn">♻ 重开</button>
+    <button id="modeBtn">🎮 玩法选择</button>
+  </div>
+</header>
+
+<div id="boardWrap">
+  <div id="grid"></div>
+  <div id="turnBar">左键翻开 · 右键标记 NERV 旗 · 在数字上双击/滚轮快速展开周围</div>
+  <div id="overlay">
+    <div class="end-card">
+      <h2 id="endTitle">清 扫 完 成 ！</h2>
+      <p id="endStats">用时 --</p>
+      <p id="endNote"></p>
+      <div class="btns">
+        <button id="againBtn">再 来 一 局</button>
+        <button id="modeBtn2" class="ghost">返回玩法选择</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="redFlash"></div>
+<div id="alarm"></div>
+<div id="toast"></div>
+
+<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\/script>');</script>
+<script src="background.js"></script>
+<script src="deco.js"></script>
+
+<script>
+"use strict";
+/* ============ 配置 ============ */
+const DIFFS = {
+  easy:   { name: "見習い訓練", rows: 9,  cols: 9,  mines: 10 },
+  normal: { name: "正規隊員",   rows: 16, cols: 16, mines: 40 },
+  hard:   { name: "使徒級·S2",  rows: 99, cols: 99, mines: 999 },
+};
+const AVATAR = { 1: "images/rei_15.jpg", 2: "images/asuka_5.jpg" }; // 双主角头像
+
+/* ============ 状态 ============ */
+let cfg = DIFFS.normal;
+let board = [];       // {mine:false, own:1|2(使徒归属角色), n:数字, open, flag}
+let started = false, over = false;
+let flagsUsed = 0, seconds = 0, timerId = null;
+let firstOpen = true;
+let audioCtx = null;
+let cell = 34;
+
+const $ = id => document.getElementById(id);
+const gridEl = $("grid"), wrapEl = $("boardWrap");
+
+/* ============ 音效 ============ */
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(f, d, t = "sine", g = .11, delay = 0) {
+  if (!audioCtx) return;
+  const s = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator(), v = audioCtx.createGain();
+  o.type = t; o.frequency.value = f;
+  v.gain.setValueAtTime(g, s);
+  v.gain.exponentialRampToValueAtTime(.0001, s + d);
+  o.connect(v); v.connect(audioCtx.destination);
+  o.start(s); o.stop(s + d + .02);
+}
+const sndOpen = () => beep(880, .03, "sine", .05);
+const sndFlag = () => beep(660, .05, "triangle", .08);
+const sndBoom = () => { beep(180, .5, "sawtooth", .14); beep(90, .7, "square", .12, .1); };
+const sndWin  = () => [523, 659, 784, 1047].forEach((f, i) => beep(f, .16, "sine", .13, i * .12));
+
+/* ============ 新局 ============ */
+function newGame(d) {
+  if (d) cfg = DIFFS[d];
+  const { rows, cols, mines } = cfg;
+  board = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({ mine: false, own: 0, n: 0, open: false, flag: false })));
+  flagsUsed = 0; firstOpen = true; over = false; started = false;
+  seconds = 0; stopTimer();
+  $("timeStat").querySelector("b").textContent = "000";
+  $("overlay").classList.remove("show");
+  $("alarm").classList.remove("go", "ok");
+  $("turnBar").innerHTML = "左键翻开 · 右键标记 NERV 旗 · 数字上双击/滚轮快速展开 · <b>" + cfg.name + "</b>";
+  const cur = d || "normal";
+  document.querySelectorAll(".controls [data-d]").forEach(b => b.classList.toggle("active", b.dataset.d === cur));
+  layout();
+  render();
+  updateHUD();
+  toast("开始：" + cfg.name + "（" + mines + " 个使徒）");
+}
+
+function layout() {
+  const { rows, cols } = cfg;
+  // 宽度优先（高难度棋盘可纵向滚动查看），按密度选间隙
+  const gap = cols > 60 ? 1 : cols > 30 ? 2 : 3;
+  document.documentElement.style.setProperty("--gap", gap + "px");
+  gridEl.style.gap = gap + "px";
+  const availW = Math.min(window.innerWidth - 30, 1900);
+  const cs = Math.max(12, Math.min(40, Math.floor((availW - 12 - (cols - 1) * gap) / cols)));
+  cell = cs;
+  document.documentElement.style.setProperty("--cs", cell + "px");
+  gridEl.style.gridTemplateColumns = `repeat(${cols}, var(--cs))`;
+  gridEl.style.width = (cols * cell + (cols - 1) * gap + 12) + "px";
+}
+
+function genMines(r0, c0) {
+  const { rows, cols, mines } = cfg;
+  const safe = new Set();
+  for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++)
+    if (r >= 0 && r < rows && c >= 0 && c < cols) safe.add(r * cols + c);
+  let placed = 0;
+  while (placed < mines) {
+    const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
+    if (safe.has(r * cols + c) || board[r][c].mine) continue;
+    board[r][c].mine = true;
+    board[r][c].own = Math.random() < .5 ? 1 : 2;   // 使徒随机归属双主角
+    placed++;
+  }
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    if (board[r][c].mine) continue;
+    board[r][c].n = around(r, c).filter(([rr, cc]) => board[rr][cc].mine).length;
+  }
+}
+
+function around(r, c) {
+  const out = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (!dr && !dc) continue;
+    const rr = r + dr, cc = c + dc;
+    if (rr >= 0 && rr < cfg.rows && cc >= 0 && cc < cfg.cols) out.push([rr, cc]);
+  }
+  return out;
+}
+
+/* ============ 渲染 ============ */
+function render() {
+  gridEl.innerHTML = "";
+  const { rows, cols } = cfg;
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const b = board[r][c];
+    const el = document.createElement("button");
+    el.className = "cell";
+    el.dataset.r = r; el.dataset.c = c;
+    if (b.open) {
+      el.classList.add("open");
+      if (b.mine) {
+        el.innerHTML = '<span class="mine">◈</span>';
+        el.style.color = b.own === 1 ? "var(--rei)" : "var(--asuka)";
+      } else if (b.n) {
+        el.innerHTML = `<span class="n${b.n}">${b.n}</span>`;
+      } else el.classList.add("zero");
+    } else if (b.flag) {
+      el.innerHTML = '<span class="flag">⚑</span>';
+    }
+    el.addEventListener("click", () => openCell(r, c));
+    el.addEventListener("contextmenu", e => { e.preventDefault(); flagCell(r, c); });
+    el.addEventListener("dblclick", e => { e.preventDefault(); chord(r, c); });
+    el.addEventListener("auxclick", e => { if (e.button === 1) chord(r, c); });
+    gridEl.appendChild(el);
+  }
+}
+
+function renderOne(r, c, extra) {
+  const el = gridEl.children[r * cfg.cols + c];
+  const b = board[r][c];
+  el.className = "cell";
+  if (extra) el.classList.add(extra);
+  if (b.open) {
+    el.classList.add("open");
+    if (b.mine) {
+      el.innerHTML = '<span class="mine">◈</span>';
+      el.style.color = b.own === 1 ? "var(--rei)" : "var(--asuka)";
+    } else if (b.n) el.innerHTML = `<span class="n${b.n}">${b.n}</span>`;
+    else el.classList.add("zero");
+  } else if (b.flag) el.innerHTML = '<span class="flag">⚑</span>';
+  else el.innerHTML = "";
+}
+
+/* ============ 操作 ============ */
+function openCell(r, c) {
+  ensureAudio();
+  if (over) return;
+  const b = board[r][c];
+  if (b.open || b.flag) return;
+  if (firstOpen) { genMines(r, c); firstOpen = false; }
+  if (!started) { started = true; startTimer(); }
+  if (b.mine) { explode(r, c); return; }
+  b.open = true;
+  sndOpen();
+  const touched = [r * cfg.cols + c];
+  if (!b.n) {
+    // 洪泛展开 0 区域（只重绘受影响的格）
+    const stack = [[r, c]];
+    while (stack.length) {
+      const [rr, cc] = stack.pop();
+      for (const [ar, ac] of around(rr, cc)) {
+        const nb = board[ar][ac];
+        if (!nb.open && !nb.mine && !nb.flag) {
+          nb.open = true;
+          touched.push(ar * cfg.cols + ac);
+          if (!nb.n) stack.push([ar, ac]);
+        }
+      }
+    }
+  }
+  for (const i of touched) renderOne(Math.floor(i / cfg.cols), i % cfg.cols);
+  checkWin();
+}
+
+function flagCell(r, c) {
+  ensureAudio();
+  if (over) return;
+  const b = board[r][c];
+  if (b.open) return;
+  if (!started) { started = true; startTimer(); }
+  b.flag = !b.flag;
+  sndFlag();
+  renderOne(r, c);
+  updateHUD();
+}
+
+function chord(r, c) {
+  ensureAudio();
+  if (over) return;
+  const b = board[r][c];
+  if (!b.open || !b.n) return;
+  const ar = around(r, c);
+  const fl = ar.filter(([rr, cc]) => board[rr][cc].flag).length;
+  if (fl !== b.n) return;          // 旗数不符不展开
+  for (const [rr, cc] of ar) {
+    const nb = board[rr][cc];
+    if (!nb.open && !nb.flag) openCell(rr, cc);
+  }
+}
+
+function explode(r, c) {
+  over = true; stopTimer();
+  sndBoom();
+  const b = board[r][c];
+  const who = b.own === 1 ? "绫波丽" : "明日香";
+  b.open = true;
+  renderOne(r, c, "hit-mine");
+  // 全部雷展示 + 错误旗标红
+  for (let rr = 0; rr < cfg.rows; rr++) for (let cc = 0; cc < cfg.cols; cc++) {
+    const cb = board[rr][cc];
+    if (cb.mine && !cb.open && !cb.flag) { cb.open = true; renderOne(rr, cc); }
+    if (!cb.mine && cb.flag) { renderOne(rr, cc, "wrong-flag"); }
+  }
+  const flash = $("redFlash");
+  flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+  const alarm = $("alarm");
+  alarm.innerHTML = `
+    <div class="banner">PATTERN : ORANGE</div>
+    <div class="sub">使徒侵入（第13使徒，捕获担当：${who}）——作戦失敗</div>`;
+  alarm.classList.add("go");
+  setTimeout(() => alarm.classList.remove("go"), 2600);
+  showEnd(false);
+}
+
+function checkWin() {
+  let opened = 0;
+  for (let r = 0; r < cfg.rows; r++) for (let c = 0; c < cfg.cols; c++)
+    if (board[r][c].open) opened++;
+  const total = cfg.rows * cfg.cols;
+  if (opened === total - cfg.mines) win();
+}
+
+function win() {
+  over = true; stopTimer();
+  sndWin();
+  const alarm = $("alarm");
+  alarm.innerHTML = `<div class="banner ok">AREA CLEARED</div>
+    <div class="sub">全使徒殲滅 · 綾波レイ &amp; 惣流·アスカ 作戦完了</div>`;
+  alarm.classList.add("go", "ok");
+  setTimeout(() => alarm.classList.remove("go"), 2400);
+  const key = "eva_mine_best_" + (cfg.name === "見習い訓練" ? "easy" : cfg.name === "正規隊員" ? "normal" : "hard");
+  const prev = Number(localStorage.getItem(key) || 0);
+  let bestHtml = "";
+  if (!prev || seconds < prev) {
+    localStorage.setItem(key, seconds);
+    bestHtml = "🎉 新纪录！";
+    $("bestVal").textContent = String(seconds).padStart(3, "0");
+  } else {
+    bestHtml = "最佳纪录 " + $("bestVal").textContent;
+  }
+  showEnd(true, bestHtml);
+}
+
+function showEnd(win, best) {
+  const h2 = $("endTitle");
+  h2.className = win ? "win" : "lose";
+  h2.textContent = win ? "清 扫 完 成 ！" : "作 戦 失 敗 ……";
+  $("endStats").innerHTML = `用时 <b>${String(seconds).padStart(3, "0")}s</b>` + (win ? " · 全部使徒已排除" : " · 使徒侵入被突破");
+  $("endNote").textContent = win
+    ? "两位少女并肩把 AT 力场防线推进到了最后一块方格。"
+    : "明日香：笨蛋！你漏了一个使徒！";
+  if (best) $("endNote").textContent += "　" + best;
+  $("overlay").classList.add("show");
+}
+
+/* ============ HUD ============ */
+function updateHUD() {
+  const left = cfg.mines - flagsUsed;
+  $("minesLeft").querySelector("b").textContent = left;
+}
+function startTimer() {
+  stopTimer();
+  timerId = setInterval(() => {
+    seconds++;
+    $("timeStat").querySelector("b").textContent = String(seconds).padStart(3, "0");
+  }, 1000);
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 2000);
+}
+
+/* ============ 事件 ============ */
+document.querySelectorAll(".controls [data-d]").forEach(b =>
+  b.addEventListener("click", () => { ensureAudio(); newGame(b.dataset.d); }));
+$("newBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("modeBtn").addEventListener("click", () => { location.href = "index.html"; });
+$("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("modeBtn2").addEventListener("click", () => { location.href = "index.html"; });
+window.addEventListener("resize", layout);
+document.addEventListener("pointerdown", ensureAudio, { once: true });
+window.addEventListener("keydown", e => { if (e.key === "F2") newGame(); });
+
+/* ============ 启动 ============ */
+layout();
+newGame("normal");
+</script>
+</body>
+</html>
