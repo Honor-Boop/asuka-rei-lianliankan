@@ -77,6 +77,13 @@
       font-size:16px;cursor:pointer;font-family:inherit}
     #decoLight .x:hover{background:rgba(255,255,255,.22)}
 
+    #reloadFab{position:fixed;top:14px;right:96px;z-index:9;width:38px;height:38px;border-radius:50%;
+      border:1px solid rgba(255,255,255,.3);background:rgba(18,16,43,.6);color:#fff;
+      font-size:17px;cursor:pointer;font-family:inherit;
+      backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+      box-shadow:0 2px 10px rgba(0,0,0,.4);transition:all .15s}
+    #reloadFab:hover{background:rgba(255,224,102,.25);border-color:rgba(255,224,102,.9);
+      transform:rotate(90deg)}
     .lightband{position:fixed;top:0;bottom:0;width:170px;z-index:0;pointer-events:none}
     .lightband.l{left:252px;background:linear-gradient(90deg,rgba(180,140,255,.14),rgba(180,140,255,0))}
     .lightband.r{right:252px;background:linear-gradient(270deg,rgba(255,128,85,.12),rgba(255,128,85,0))}
@@ -201,6 +208,14 @@
     valEl.innerHTML = Math.max(0, shown + jitter).toFixed(1) + "<i>%</i>";
     boxEl.classList.toggle("berserk", berserk);
   }, 620);
+
+  // 悬浮刷新按钮（一键重载最新页面）
+  const reloadBtn = document.createElement("button");
+  reloadBtn.id = "reloadFab";
+  reloadBtn.title = "刷新页面（重新加载最新版本）";
+  reloadBtn.textContent = "⟳";
+  reloadBtn.addEventListener("click", () => location.reload());
+  document.body.appendChild(reloadBtn);
 
   // 宽屏才显示
   const mq = window.matchMedia("(min-width:" + MIN_W + "px)");
