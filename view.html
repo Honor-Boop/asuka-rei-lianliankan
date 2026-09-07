@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>EVA 观景 · 壁纸放映室</title>
+<style>
+  :root {
+    --gold: #ffe066;
+    --text: #ffffff;
+    --dim: rgba(255, 255, 255, 0.75);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    background: #12102b;
+    color: var(--text);
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  /* 画面中心索引大数字（左上角极淡） */
+  #bigIdx {
+    position: fixed; left: 26px; top: 20px; z-index: 2;
+    font-family: Consolas, monospace;
+    font-size: 90px; font-weight: 900; font-style: italic;
+    color: rgba(255, 255, 255, 0.10);
+    line-height: 1; pointer-events: none;
+  }
+  #viewTitle {
+    position: fixed; left: 28px; bottom: 24px; z-index: 3;
+    font-size: 11px; letter-spacing: 3px; color: rgba(255,255,255,.5);
+    pointer-events: none; font-family: Consolas, monospace;
+  }
+  /* 底部控制条 */
+  #bar {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    z-index: 5;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(18, 16, 43, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 14px;
+    padding: 8px 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #bar button {
+    font-family: inherit; font-size: 13px; color: var(--text);
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 9px;
+    padding: 7px 13px; cursor: pointer;
+    transition: background .15s, transform .15s;
+  }
+  #bar button:hover { background: rgba(255,255,255,.2); }
+  #bar button.play { min-width: 46px; }
+  #bar .sep { width: 1px; height: 22px; background: rgba(255,255,255,.18); margin: 0 3px; }
+  #bar .count {
+    font-size: 12px; color: var(--dim);
+    font-variant-numeric: tabular-nums;
+    padding: 0 6px; font-family: Consolas, monospace;
+  }
+  .fade { animation: fadeIn .5s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body data-bg-clean>
+
+<div id="bigIdx">01</div>
+<div id="viewTitle">EVA WALLPAPER GALLERY · 観景モード</div>
+
+<div id="bar">
+  <button id="prevBtn" title="上一张 (←)">‹ 上一张</button>
+  <button id="nextBtn" title="下一张 (→)">下一张 ›</button>
+  <button class="play" id="playBtn" title="暂停/继续自动轮换">⏸</button>
+  <span class="count" id="countTxt">-- / --</span>
+  <span class="sep"></span>
+  <button id="backBtn" title="返回玩法选择">🎮 返回</button>
+</div>
+
+<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\/script>');</script>
+<script src="background.js"></script>
+<script>
+"use strict";
+const LIST = window.WALLPAPER_LIST || [];
+const CHAR_NAME = { rei: "绫波丽", asuka: "明日香", misato: "美里" };
+const idxEl = document.getElementById("bigIdx");
+const countEl = document.getElementById("countTxt");
+const playBtn = document.getElementById("playBtn");
+
+function refresh() {
+  const cur = window.__bgCurrent();
+  const item = LIST[cur];
+  countEl.textContent = `${String(cur + 1).padStart(2, "0")} / ${String(LIST.length).padStart(2, "0")}`;
+  idxEl.textContent = String(cur + 1).padStart(2, "0");
+  document.title = `EVA 观景 · ${item ? CHAR_NAME[item.char] + " " + item.res : "壁纸放映室"}`;
+  playBtn.textContent = window.__bgPaused() ? "▶" : "⏸";
+}
+// 等待首帧显示后刷新计数
+setTimeout(refresh, 200);
+
+document.getElementById("prevBtn").addEventListener("click", async () => {
+  await window.__bgPrev();
+  refresh();
+});
+document.getElementById("nextBtn").addEventListener("click", async () => {
+  await window.__bgNext();
+  refresh();
+});
+playBtn.addEventListener("click", () => {
+  if (window.__bgPaused()) { window.__bgResume(); } else { window.__bgPause(); }
+  playBtn.textContent = window.__bgPaused() ? "▶" : "⏸";
+});
+document.getElementById("backBtn").addEventListener("click", () => {
+  location.href = "index.html";
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") document.getElementById("prevBtn").click();
+  if (e.key === "ArrowRight") document.getElementById("nextBtn").click();
+  if (e.key === " ") { e.preventDefault(); playBtn.click(); }
+  if (e.key === "Escape") location.href = "index.html";
+});
+// 手动切图后刷新（自动轮换也会走到这里）
+window.addEventListener("bgchange", refresh);
+</script>
+</body>
+</html>

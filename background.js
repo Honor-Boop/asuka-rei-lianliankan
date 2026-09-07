@@ -46,9 +46,6 @@
   `;
   document.head.appendChild(style);
 
-  const root = document.createElement("div");
-  root.id = "bgRotator";
-
   function makeLayer() {
     const layer = document.createElement("div");
     layer.className = "bg-layer";
@@ -61,11 +58,20 @@
   }
   const layerA = makeLayer();
   const layerB = makeLayer();
-  const shade = document.createElement("div");
-  shade.className = "bg-shade";
-  const tag = document.createElement("div");
+  const root = document.createElement("div");
+  root.id = "bgRotator";
+  root.append(layerA, layerB);
+  // 观景页（data-bg-clean）不叠暗化遮罩，纯享壁纸
+  const cleanMode = document.body.hasAttribute("data-bg-clean");
+  let tag = null;
+  if (!cleanMode) {
+    const shade = document.createElement("div");
+    shade.className = "bg-shade";
+    root.appendChild(shade);
+  }
+  tag = document.createElement("div");
   tag.className = "bg-tag";
-  root.append(layerA, layerB, shade, tag);
+  root.appendChild(tag);
   document.body.prepend(root);
 
   let current = -1;   // 当前展示下标
@@ -98,9 +104,11 @@
     current = index;
     const who = { rei: "绫波丽", asuka: "明日香", misato: "美里" }[item.char] || item.char;
     tag.textContent = `${who} · ${item.res}`;
+    window.dispatchEvent(new CustomEvent("bgchange", { detail: { index, char: item.char } }));
   }
 
   function nextIndex() { return (current + 1) % LIST.length; }
+  function prevIndex() { return current < 0 ? 0 : (current - 1 + LIST.length) % LIST.length; }
 
   function schedule() {
     if (timer) clearTimeout(timer);
@@ -112,7 +120,15 @@
     await show(nextIndex());
     schedule(); // 手动切换后重新计时
   };
+  window.__bgPrev = async function () {
+    await show(prevIndex());
+    schedule();
+  };
+  window.__bgPause = function () { if (timer) { clearTimeout(timer); timer = null; } };
+  window.__bgResume = function () { schedule(); };
+  window.__bgPaused = () => !timer;
   window.__bgList = () => LIST.slice();
+  window.__bgCurrent = () => current;
 
   // 首页随机起点
   show(Math.floor(Math.random() * LIST.length)).then(schedule);
