@@ -61,6 +61,90 @@ window.WALLPAPER_LIST = [
     "res": "4337x2439"
   },
   {
+    "src": "wallpapers/misato_upload_01.jpeg",
+    "thumb": "wallpapers/thumbs/misato_upload_01.jpeg",
+    "char": "misato",
+    "res": "1200x750"
+  },
+  {
+    "src": "wallpapers/misato_upload_01.jpg",
+    "thumb": "wallpapers/thumbs/misato_upload_01.jpg",
+    "char": "misato",
+    "res": "2048x1152"
+  },
+  {
+    "src": "wallpapers/misato_upload_01.png",
+    "thumb": "wallpapers/thumbs/misato_upload_01.png",
+    "char": "misato",
+    "res": "523x1138"
+  },
+  {
+    "src": "wallpapers/misato_upload_01.webp",
+    "thumb": "wallpapers/thumbs/misato_upload_01.webp",
+    "char": "misato",
+    "res": "1280x719"
+  },
+  {
+    "src": "wallpapers/misato_upload_02.jpg",
+    "thumb": "wallpapers/thumbs/misato_upload_02.jpg",
+    "char": "misato",
+    "res": "870x489"
+  },
+  {
+    "src": "wallpapers/misato_upload_02.png",
+    "thumb": "wallpapers/thumbs/misato_upload_02.png",
+    "char": "misato",
+    "res": "637x1138"
+  },
+  {
+    "src": "wallpapers/misato_upload_02.webp",
+    "thumb": "wallpapers/thumbs/misato_upload_02.webp",
+    "char": "misato",
+    "res": "474x266"
+  },
+  {
+    "src": "wallpapers/misato_upload_03.jpg",
+    "thumb": "wallpapers/thumbs/misato_upload_03.jpg",
+    "char": "misato",
+    "res": "1920x1080"
+  },
+  {
+    "src": "wallpapers/misato_upload_03.webp",
+    "thumb": "wallpapers/thumbs/misato_upload_03.webp",
+    "char": "misato",
+    "res": "474x296"
+  },
+  {
+    "src": "wallpapers/misato_upload_04.jpg",
+    "thumb": "wallpapers/thumbs/misato_upload_04.jpg",
+    "char": "misato",
+    "res": "523x1138"
+  },
+  {
+    "src": "wallpapers/misato_upload_04.webp",
+    "thumb": "wallpapers/thumbs/misato_upload_04.webp",
+    "char": "misato",
+    "res": "474x266"
+  },
+  {
+    "src": "wallpapers/misato_upload_05.jpg",
+    "thumb": "wallpapers/thumbs/misato_upload_05.jpg",
+    "char": "misato",
+    "res": "320x569"
+  },
+  {
+    "src": "wallpapers/misato_upload_05.webp",
+    "thumb": "wallpapers/thumbs/misato_upload_05.webp",
+    "char": "misato",
+    "res": "474x243"
+  },
+  {
+    "src": "wallpapers/misato_upload_06.webp",
+    "thumb": "wallpapers/thumbs/misato_upload_06.webp",
+    "char": "misato",
+    "res": "474x670"
+  },
+  {
     "src": "wallpapers/misato_wall_01.png",
     "thumb": "wallpapers/thumbs/misato_wall_01.png",
     "char": "misato",
