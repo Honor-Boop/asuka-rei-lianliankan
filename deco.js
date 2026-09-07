@@ -56,6 +56,26 @@
     @media (prefers-reduced-motion: reduce){
       .sync-box .ring,.chip .dot,.magi .node.pulse svg,.atf svg,.sync-box.berserk{animation:none}
     }
+    .deco-gallery{display:flex;flex-direction:column;align-items:center;gap:9px}
+    .gal-title{font-size:8px;letter-spacing:2px;color:#c9a6ff;opacity:.9;font-family:Consolas,monospace}
+    .deco-card{position:relative;width:132px;height:172px;padding:0;overflow:hidden;
+      border:1px solid rgba(201,166,255,.45);border-radius:10px;background:#14101f;
+      cursor:zoom-in;pointer-events:auto;display:block;box-shadow:0 3px 12px rgba(0,0,0,.45);
+      transition:transform .18s,box-shadow .18s,border-color .18s;font-family:inherit}
+    .deco-card img{width:100%;height:100%;object-fit:cover;object-position:center 12%;display:block}
+    .deco-card:hover{transform:scale(1.06);border-color:#e6c9ff;box-shadow:0 0 18px rgba(201,166,255,.55)}
+    .deco-card .tag{position:absolute;left:0;right:0;bottom:0;font-size:9px;letter-spacing:1.5px;
+      color:#fff;text-align:center;padding:16px 2px 5px;font-family:Consolas,monospace;
+      background:linear-gradient(transparent,rgba(10,6,20,.88));pointer-events:none}
+    #decoLight{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;
+      background:rgba(5,3,12,.9);backdrop-filter:blur(8px)}
+    #decoLight.show{display:flex}
+    #decoLight img{max-width:min(88vw,1400px);max-height:86vh;border-radius:12px;
+      box-shadow:0 12px 70px rgba(0,0,0,.85)}
+    #decoLight .x{position:fixed;top:18px;right:22px;width:42px;height:42px;border-radius:50%;
+      border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.1);color:#fff;
+      font-size:16px;cursor:pointer;font-family:inherit}
+    #decoLight .x:hover{background:rgba(255,255,255,.22)}
   `;
   document.head.appendChild(style);
 
@@ -74,6 +94,18 @@
       </svg><span>${name}</span>
     </div>`;
 
+  // 葛城美里精选（另抓的性感向 safe 图，非图库内壁纸）
+  const cardHtml = (n) => `
+    <button class="deco-card" data-hd="assets/deco/hd/misato_card_${n}.jpg">
+      <img src="assets/deco/misato_card_${n}.jpg" alt="葛城美里" loading="lazy">
+      <span class="tag">KATSURAGI · 0${n}</span>
+    </button>`;
+  const galleryHtml = (a, b) => `
+    <div class="deco-item deco-gallery">
+      <div class="gal-title">◆ GALLERY · KATSURAGI ◆</div>
+      ${cardHtml(a)}${cardHtml(b)}
+    </div>`;
+
   const left = document.createElement("aside");
   left.className = "deco-rail left";
   left.innerHTML = `
@@ -81,7 +113,7 @@
       <div class="nerv-word">NERV</div>
       <div class="motto">God's in his heaven.<br>All's right with the world.</div>
     </div>
-    <div class="deco-item vtext"><span>特務機関</span><b>第3新東京市</b></div>
+    ${galleryHtml(1, 2)}
     <div class="deco-item"><div class="stripe"></div></div>
     <div class="deco-item chip"><span class="dot"></span>PATTERN : BLUE</div>
     <div class="deco-item"><div class="barcode"></div><div class="tiny">MARDUK REPORT · 04</div></div>`;
@@ -99,6 +131,7 @@
         <div class="sub">EVA-01 TEST TYPE</div>
       </div>
     </div>
+    ${galleryHtml(3, 4)}
     <div class="deco-item"><div class="stripe"></div></div>
     <div class="deco-item magi">
       ${tri(true, "MELCHIOR")}${tri(false, "BALTHASAR")}${tri(false, "CASPER")}
@@ -113,11 +146,29 @@
         </g>
       </svg>
       <div class="lab">A.T. FIELD ACTIVE</div>
-    </div>
-    <div class="deco-item vtext"><b>使徒襲来</b><span>発進準備</span></div>`;
+    </div>`;
 
   document.body.appendChild(left);
   document.body.appendChild(right);
+
+  // 美里精选：点击卡片放大预览
+  const light = document.createElement("div");
+  light.id = "decoLight";
+  light.innerHTML = `<img src="" alt=""><button class="x" title="关闭 (Esc)">✕</button>`;
+  document.body.appendChild(light);
+  const lightImg = light.querySelector("img");
+  const lightClose = () => light.classList.remove("show");
+  document.querySelectorAll(".deco-card").forEach(card => {
+    card.addEventListener("click", () => {
+      lightImg.src = card.dataset.hd;
+      light.classList.add("show");
+    });
+  });
+  light.querySelector(".x").addEventListener("click", lightClose);
+  light.addEventListener("click", e => { if (e.target === light) lightClose(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && light.classList.contains("show")) lightClose();
+  });
 
   // 同步率面板：目标值平滑逼近 + 轻微抖动，暴走时红色警报
   const valEl = right.querySelector("#decoSyncVal");
