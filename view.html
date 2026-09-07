@@ -61,6 +61,22 @@
     font-variant-numeric: tabular-nums;
     padding: 0 6px; font-family: Consolas, monospace;
   }
+  #bar button.locked {
+    background: rgba(255, 224, 102, 0.18);
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 10px rgba(255, 224, 102, 0.3);
+  }
+  #lockHint {
+    position: fixed; top: 20px; right: 26px; z-index: 4;
+    font-size: 11px; letter-spacing: 2px; color: var(--gold);
+    border: 1px solid rgba(255, 224, 102, 0.5);
+    background: rgba(18, 16, 43, 0.55);
+    border-radius: 8px; padding: 4px 10px;
+    backdrop-filter: blur(6px);
+    pointer-events: none; display: none;
+    font-family: Consolas, monospace;
+  }
   .fade { animation: fadeIn .5s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
@@ -69,11 +85,13 @@
 
 <div id="bigIdx">01</div>
 <div id="viewTitle">EVA WALLPAPER GALLERY · 観景モード</div>
+<div id="lockHint">🔒 壁纸已锁定</div>
 
 <div id="bar">
   <button id="prevBtn" title="上一张 (←)">‹ 上一张</button>
   <button id="nextBtn" title="下一张 (→)">下一张 ›</button>
   <button class="play" id="playBtn" title="暂停/继续自动轮换">⏸</button>
+  <button id="lockBtn" title="锁定当前壁纸（停止自动轮换）">🔓 锁定</button>
   <span class="count" id="countTxt">-- / --</span>
   <span class="sep"></span>
   <button id="backBtn" title="返回玩法选择">🎮 返回</button>
@@ -100,18 +118,39 @@ function refresh() {
 // 等待首帧显示后刷新计数
 setTimeout(refresh, 200);
 
-document.getElementById("prevBtn").addEventListener("click", async () => {
-  await window.__bgPrev();
-  refresh();
-});
-document.getElementById("nextBtn").addEventListener("click", async () => {
-  await window.__bgNext();
-  refresh();
-});
+
 playBtn.addEventListener("click", () => {
   if (window.__bgPaused()) { window.__bgResume(); } else { window.__bgPause(); }
   playBtn.textContent = window.__bgPaused() ? "▶" : "⏸";
 });
+/* 锁定壁纸：固定当前张，不自动轮换；手动切图后仍保持锁定 */
+let locked = false;
+const lockBtn = document.getElementById("lockBtn");
+const lockHint = document.getElementById("lockHint");
+function applyLockUI() {
+  lockBtn.textContent = locked ? "🔒 已锁定" : "🔓 锁定";
+  lockBtn.classList.toggle("locked", locked);
+  lockBtn.title = locked ? "解除锁定，恢复自动轮换" : "锁定当前壁纸（停止自动轮换）";
+  lockHint.style.display = locked ? "block" : "none";
+}
+lockBtn.addEventListener("click", () => {
+  locked = !locked;
+  if (locked) { window.__bgPause(); } else { window.__bgResume(); }
+  applyLockUI();
+  playBtn.textContent = window.__bgPaused() ? "▶" : "⏸";
+});
+function manualShow(fn) {
+  return async function () {
+    await fn.apply(this, arguments);
+    if (locked) window.__bgPause();   // 锁定中手动切换也保持锁定
+    playBtn.textContent = window.__bgPaused() ? "▶" : "⏸";
+    refresh();
+  };
+}
+const _n = document.getElementById("nextBtn"), _p = document.getElementById("prevBtn");
+_n.addEventListener("click", manualShow(window.__bgNext));
+_p.addEventListener("click", manualShow(window.__bgPrev));
+applyLockUI();
 document.getElementById("backBtn").addEventListener("click", () => {
   location.href = "index.html";
 });
