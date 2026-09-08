@@ -34,7 +34,9 @@ def api(path, payload=None, method="GET"):
 
 
 def git(*args):
-    return subprocess.run(["git"] + list(args), capture_output=True, text=True, check=True).stdout.strip()
+    # core.quotepath=false：避免中文文件名被转义成引号+八进制
+    return subprocess.run(["git", "-c", "core.quotepath=false"] + list(args),
+                          capture_output=True, text=True, check=True).stdout.strip()
 
 
 def main():
