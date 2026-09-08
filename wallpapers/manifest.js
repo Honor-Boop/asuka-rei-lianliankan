@@ -157,12 +157,6 @@ window.WALLPAPER_LIST = [
     "res": "4081x2885"
   },
   {
-    "src": "wallpapers/misato_wall_03.jpg",
-    "thumb": "wallpapers/thumbs/misato_wall_03.jpg",
-    "char": "misato",
-    "res": "2894x3500"
-  },
-  {
     "src": "wallpapers/misato_wall_04.jpg",
     "thumb": "wallpapers/thumbs/misato_wall_04.jpg",
     "char": "misato",
@@ -197,18 +191,6 @@ window.WALLPAPER_LIST = [
     "thumb": "wallpapers/thumbs/misato_wall_09.jpg",
     "char": "misato",
     "res": "5867x3441"
-  },
-  {
-    "src": "wallpapers/misato_wall_10.jpg",
-    "thumb": "wallpapers/thumbs/misato_wall_10.jpg",
-    "char": "misato",
-    "res": "4703x3408"
-  },
-  {
-    "src": "wallpapers/rei_wall_01.jpg",
-    "thumb": "wallpapers/thumbs/rei_wall_01.jpg",
-    "char": "rei",
-    "res": "3000x3000"
   },
   {
     "src": "wallpapers/rei_wall_02.png",

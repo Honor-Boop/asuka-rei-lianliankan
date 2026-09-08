@@ -49,8 +49,14 @@ def main():
 
     tracked = [p for p in git("ls-files").splitlines() if p]
     uploads = []
+    gone = []          # 已跟踪但本地已删除（含用户在图库删除的图片）
     new_tree = []
     for p in tracked:
+        if not os.path.isfile(p):
+            if p in remote:
+                gone.append(p)
+                print("gone:", p, flush=True)
+            continue
         sha = git("hash-object", "-w", p)
         if remote.get(p) == sha:
             new_tree.append({"path": p, "mode": "100644", "type": "blob", "sha": sha})
@@ -62,8 +68,8 @@ def main():
         new_tree.append({"path": p, "mode": "100644", "type": "blob", "sha": blob["sha"]})
         uploads.append(p)
         print("upload:", p, "(", len(content), "bytes )", flush=True)
-    deleted = [p for p in remote if p not in tracked]
-    for p in deleted:
+    deleted = [p for p in remote if p not in tracked] + gone
+    for p in sorted(set(deleted)):
         print("delete:", p, flush=True)
 
     commit = api("/git/commits", {
