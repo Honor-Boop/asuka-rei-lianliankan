@@ -11,3 +11,4 @@ Thumbs.db
 build/
 dist/
 *.spec
+__pycache__/
