@@ -1,35 +1,16 @@
-# 验收报告 · 正式桌面启动入口（2026-09-09）
+# 验收报告 · 桌面图标换成纯凌波丽卡通（2026-09-09）
 
 ## 需求
-用户截图反馈桌面启动程序问题，确认需求：桌面图标应启动**正式安装版**而非开发目录产物。
+图标换成凌波丽卡通图片（原图标为左凌波丽+右明日香双子拼图）。
 
-## 根因（截图弹窗内容）
-本机启用应用程序控制策略（WDAC）：**所有 PyInstaller 无签名 exe 均被拦截**
-（WinError 4551，安装器与正式/开发 exe 全部验证被拦），vbs 脚本不受此策略限制。
-用户此前可用的桌面入口均为 vbs 启动器。
+## 变更
+- 用户从 6 张纯凌波丽候选（images/rei_1/2/4/5/6/15 圆角方形 256）中选定 A（rei_1）
+- assets/icon.ico 与 icon.png 已替换为纯凌波丽（多尺寸 16-256）
+- 正式安装目录新增 icon_rei.ico（新路径强制 Explorer 刷新），同名 icon.ico 同步覆盖
+- 桌面「EVA小游戏」「EVA小游戏 - 快捷方式」与开始菜单图标均指向 icon_rei.ico
+- 候选文件留档 assets/icon_candidates/rei_icon_A~F.png
 
-## 交付
-- 正式启动器 `AppData\Local\EVA小游戏\EVA小游戏\EVA小游戏.vbs`：
-  8765 未运行时以安装目录 serve.py（ROOT=安装目录，v1.1.7）起服务，
-  已运行则复用；随后用 Edge/Chrome --app 模式打开游戏（Edge 已运行时会话
-  合并为浏览器新标签，属 Edge 单例正常行为）
-- 桌面「EVA小游戏.lnk」「EVA小游戏 - 快捷方式.lnk」与开始菜单入口均改指该
-  vbs，图标=安装目录 assets/icon.ico（原指向 exe，必然被策略拦截）
-- 模板归档项目根 official_launcher.vbs
-- 说明：另两个桌面图标（EVA刷新启动 / 明日香&凌波丽连连看）为开发目录入口，
-  供开发用；分发玩家的安装包 exe 不受本机 WDAC 限制（玩家机器无此策略）
-
-## 验证
-- cscript 语法执行 rc=0；vbs 复用现有 8765 服务正常（api/version = v1.1.7）
-- Edge --app 直启验证：已运行实例时转发为新标签（Windows Edge 单例行为）
-- 快捷方式目标/图标已核对存在
-
-## 待用户确认
-- 双击桌面「EVA小游戏」图标打开游戏窗口（Edge 呈现环节需人工点验）
-
-## 追加（用户反馈：不要依赖 Edge）
-- vbs 启动器弃用 Edge/Chrome --app，改为 `pythonw desktop.py`（pywebview /
-  WebView2 runtime，与正式 exe 同一渲染器）：独立应用窗口、无浏览器 UI
-- desktop.py 已复制进安装目录；窗口实测：pythonw 进程 + 窗口标题
-  "EVA 小游戏 · 明日香 × 绫波丽" + msedgewebview2 渲染进程
-- 安装目录版本与 zip/Release 分发不受影响（exe 分发机器无 WDAC）
+## 生效范围
+- 本机桌面快捷方式图标立即生效（新路径无缓存问题，ie4uinit 已刷缓存）
+- 项目 assets/icon.ico 为后续桌面 exe / 安装器打包源（spec icon 引用），
+  下次重建安装包或发版时自动带上新图标；本轮未重发 Release
