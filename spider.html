@@ -163,6 +163,9 @@
     <div class="stat"><div class="label">步数</div><b id="moves">0</b></div>
   </div>
   <div class="controls">
+    <button class="mbtn" data-m="single">♥ 単色</button>
+    <button class="mbtn" data-m="four">♠ 4花色</button>
+    <span id="modeTag" style="font-size:11px;color:var(--text-dim);align-self:center"></span>
     <button id="undoBtn" disabled>↩ 撤销</button>
     <button id="dealBtn" title="给每列发一张新牌">🃏 发牌 ×<span id="dealLeft">5</span></button>
     <button id="newBtn">♻ 重开</button>
@@ -194,10 +197,11 @@
 "use strict";
 /* ============ 素材与常量 ============ */
 const RANK_NAME = ["", "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
-const FACES = {};   // rank(1..13) -> 已加载 Image
+const SUITS = ["红桃","方块","梅花","黑桃"];
+const FACES = [];   // FACES[suit][rank]
 let BACK = null;
-const IMG_BASE = "assets/spider/";
-const SUIT_FILE = r => `${IMG_BASE}红桃${RANK_NAME[r]}.png`;
+const IMG_BASE = "assets/spider/cards/";
+const SUIT_FILE = (s2, r) => `${IMG_BASE}${SUITS[s2]}${RANK_NAME[r]}.jpg`;
 
 function loadImg(src) {
   return new Promise((res, rej) => {
@@ -210,8 +214,9 @@ function loadImg(src) {
 
 /* ============ 状态 ============ */
 const COLS = 10;
-let stacks = [];        // 每列 array {r, up}，index0=列底
-let reserve = [];       // 储备牌（{r}）
+let mode = "single";    // single: 単色(红桃×8) / four: 标准 4 花色(整副×2)
+let stacks = [];        // 每列 array {r, suit, up}，index0=列底
+let reserve = [];       // 储备牌（{r,suit}）
 let sel = null;         // {col, depth} 选中的段（depth 起全部）
 let setsDone = 0, moves = 0;
 let history = [];       // 撤销快照 {stacks, reserve, setsDone, moves}
@@ -250,9 +255,14 @@ function shuffled(arr) {
   return a;
 }
 
-function newGame() {
+function newGame(m) {
+  if (m) mode = m;
   const deck = [];
-  for (let g = 0; g < 8; g++) for (let r = 1; r <= 13; r++) deck.push({ r });
+  if (mode === "single") {
+    for (let g = 0; g < 8; g++) for (let r = 1; r <= 13; r++) deck.push({ r, suit: 0 });
+  } else {
+    for (let d = 0; d < 2; d++) for (let s2 = 0; s2 < 4; s2++) for (let r = 1; r <= 13; r++) deck.push({ r, suit: s2 });
+  }
   const sh = shuffled(deck);
   stacks = []; reserve = [];
   let k = 0;
@@ -267,7 +277,9 @@ function newGame() {
   $("overlay").classList.remove("show");
   render();
   updateHUD();
-  toast("新的一局蜘蛛纸牌");
+  $("modeTag").textContent = mode === "single" ? "♥ 単色 · 红桃×8 组" : "♠ 4花色 · 整副×2 · 标准";
+  document.querySelectorAll(".mbtn").forEach(b => b.classList.toggle("active", b.dataset.m === mode));
+  toast((mode === "single" ? "単色（红桃）新局" : "4 花色新局") + "：" + (mode === "single" ? "8 套红桃" : "8 套×4 花色"));
 }
 
 /* ============ 渲染 ============ */
@@ -296,12 +308,12 @@ function render() {
       if (!c.up) {
         card.classList.add("face-down");
         const img = document.createElement("img");
-        img.src = IMG_BASE + "back.png";
+        img.src = IMG_BASE + "back_blue.jpg";
         card.appendChild(img);
       } else {
         card.style.zIndex = i;
         const img = document.createElement("img");
-        img.src = FACES[c.r].src;
+        img.src = FACES[c.suit][c.r].src;
         img.draggable = false;
         card.appendChild(img);
         if (sel && sel.col === ci && i >= sel.depth) card.classList.add("sel");
@@ -369,7 +381,7 @@ function segLen(col) {
   let n = 0;
   for (let i = col.length - 1; i >= 0; i--) {
     if (n === 0) { n = 1; continue; }
-    if (col[i].r === col[i + 1].r + 1) n++; else break;
+    if (col[i].r === col[i + 1].r + 1 && col[i].suit === col[i + 1].suit) n++; else break;
   }
   return n;
 }
@@ -459,7 +471,9 @@ function checkSet(ci) {
   const col = stacks[ci];
   if (col.length !== 13) return;
   let ok = col[0].r === 13;   // 列底 K，向上一张张 -1 到顶 A
-  for (let i = 1; i < 13; i++) if (col[i].r !== col[i - 1].r - 1) { ok = false; break; }
+  for (let i = 1; i < 13; i++) {
+    if (col[i].r !== col[i - 1].r - 1 || col[i].suit !== col[0].suit) { ok = false; break; }
+  }
   if (!ok) return;
   stacks[ci] = [];
   setsDone++;
@@ -521,6 +535,7 @@ function toast(msg) {
 }
 
 /* ============ 事件 ============ */
+document.querySelectorAll(".mbtn").forEach(b => b.addEventListener("click", () => { ensureAudio(); newGame(b.dataset.m); }));
 $("undoBtn").addEventListener("click", undo);
 $("dealBtn").addEventListener("click", dealRow);
 $("newBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
@@ -533,11 +548,14 @@ document.addEventListener("pointerdown", ensureAudio, { once: true });
 /* ============ 启动 ============ */
 (async function boot() {
   const jobs = [];
-  for (let r = 1; r <= 13; r++) {
-    FACES[r] = null;
-    jobs.push(loadImg(SUIT_FILE(r)).then(im => { FACES[r] = im; }));
+  for (let s2 = 0; s2 < 4; s2++) {
+    FACES[s2] = [];
+    for (let r = 1; r <= 13; r++) {
+      FACES[s2][r] = null;
+      jobs.push(loadImg(SUIT_FILE(s2, r)).then(im => { FACES[s2][r] = im; }));
+    }
   }
-  BACK = await loadImg(IMG_BASE + "back.png").catch(() => null);
+  BACK = await loadImg(IMG_BASE + "back_blue.jpg").catch(() => null);
   await Promise.all(jobs);
   newGame();
 })();
