@@ -115,12 +115,16 @@
     #updModal{position:fixed;inset:0;z-index:120;display:none;align-items:center;justify-content:center;
       background:rgba(8,5,18,.55);backdrop-filter:blur(4px)}
     #updModal.show{display:flex}
-    #updModal .box{text-align:center;max-width:480px;background:rgba(34,25,66,.94);
+    #updModal .box{text-align:center;max-width:560px;background:rgba(34,25,66,.94);
       border:1px solid rgba(255,224,102,.45);border-radius:14px;padding:22px 28px;
       box-shadow:0 0 0 1px rgba(255,224,102,.15),0 10px 50px rgba(0,0,0,.6)}
     #updModal h3{font-size:17px;letter-spacing:2px;margin-bottom:6px;color:var(--gold,#ffe066);
       font-style:italic}
     #updModal p{font-size:12.5px;color:rgba(236,232,247,.85);line-height:1.7;margin:4px 0}
+    #updModal #updNotes{text-align:left;max-height:44vh;overflow:auto;margin-top:10px;
+      padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);font-size:12.5px;line-height:1.75;
+      color:rgba(236,232,247,.92);white-space:pre-wrap;word-break:break-word}
     #updModal .btns{display:flex;gap:10px;justify-content:center;margin-top:14px}
     #updModal button{font-family:inherit;font-size:13px;font-weight:700;color:#14101f;cursor:pointer;
       border:none;border-radius:9px;padding:8px 20px;
@@ -287,12 +291,18 @@
   updModal.innerHTML = `<div class="box">
       <h3>发现新版本</h3>
       <p id="updText">正在检查……</p>
+      <div id="updNotes"></div>
       <div class="btns">
         <button class="ok" id="updGo">去下载安装</button>
         <button class="ghost" id="updClose">暂不更新</button>
       </div>
     </div>`;
   document.body.appendChild(updModal);
+
+  // Release 说明（markdown 轻清洗：去掉标题符号，文本展示）
+  function fmtNotes(n) {
+    return (n || "").replace(/^#{1,4}\s*/gm, "").replace(/[*_`]/g, "").trim();
+  }
 
   async function checkUpdate() {
     try {
@@ -304,7 +314,12 @@
         updChip.classList.add("has-update");
         updChip.title = "发现新版 " + d.latest + "，点击更新";
         updModal.querySelector("#updText").textContent =
-          "当前版本 " + d.current + "，最新 " + d.latest + "。 下载安装包后覆盖安装即可（存档与图库保留）。";
+          "当前版本 " + d.current + "，发现新版本 " + d.latest + "。下载安装包覆盖安装即可（存档与图库保留）。";
+        const notes = fmtNotes(d.notes);
+        const notesEl = updModal.querySelector("#updNotes");
+        notesEl.style.display = "";
+        if (notes) notesEl.textContent = "━━ 本次更新内容 ━━\n\n" + notes;
+        else notesEl.style.display = "none";
         const go = updModal.querySelector("#updGo");
         go.onclick = () => { window.open(d.url, "_blank"); updModal.classList.remove("show"); };
       }

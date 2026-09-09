@@ -53,17 +53,17 @@ def build_manifest():
     return items
 
 
-VERSION = "v1.1.6"   # 与 GitHub Release tag 同步
+VERSION = "v1.1.7"   # 与 GitHub Release tag 同步
 GITHUB_API = "https://api.github.com/repos/Honor-Boop/asuka-rei-lianliankan/releases/latest"
 
 
 def check_update():
-    """查询 GitHub 最新 Release，返回是否有新版与下载地址。"""
+    """查询 GitHub 最新 Release，返回是否有新版、下载地址与更新说明。"""
     try:
         req = urllib.request.Request(GITHUB_API, headers={
             "User-Agent": "eva-minigames-updater", "Accept": "application/vnd.github+json"})
         with urllib.request.urlopen(req, timeout=6) as r:
-            d = json.load(r)
+            d = json.loads(r.read().decode("utf-8"))
         tag = d.get("tag_name") or ""
         url = None
         for a in d.get("assets") or []:
@@ -73,8 +73,10 @@ def check_update():
                 break
         if not url and d.get("assets"):
             url = d["assets"][0].get("browser_download_url") or None
+        body = d.get("body") or ""
         return {"ok": True, "latest": tag, "current": VERSION,
-                "update": tag != VERSION and tag != "", "url": url}
+                "update": tag != VERSION and tag != "", "url": url,
+                "notes": body[:3000]}
     except Exception as e:
         return {"ok": False, "error": type(e).__name__}
 
