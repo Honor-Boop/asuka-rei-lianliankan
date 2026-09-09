@@ -74,12 +74,14 @@
     min-width: 52px;
     position: relative;
     border-radius: 9px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px dashed rgba(255, 255, 255, 0.16);
     cursor: pointer;
     transition: background .15s;
   }
-  .col:hover { background: rgba(255, 255, 255, 0.09); }
+  .col:not(.has-cards) {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.16);
+  }
+  .col.has-cards:hover { background: rgba(255, 255, 255, 0.04); }
   .col .slot-card {
     position: absolute; left: 50%; transform: translateX(-50%);
     width: 100%; border-radius: 7px;
@@ -204,12 +206,13 @@
 <div id="helpModal">
   <div class="box">
     <h3>蜘蛛纸牌 · 玩法说明</h3>
-    <div class="rule"><b>目标</b>：把所有牌按<b>同花色 K→A 顺序</b>凑成完整的 13 张连牌，凑齐一套会自动收走并 +100；共 8 套，全部收齐即获胜。</div>
-    <div class="rule"><b>列</b>：10 列共 104 张（単色=红桃×8 组；4 花色=整副扑克×2）。每列只有最上面一张翻开，移走它才能翻开下面一张。</div>
-    <div class="rule"><b>移动（微软 build-down 式）</b>：列从顶向下按<b>降序</b>延伸——新牌接到“比它大 1”的翻开牌<b>之下</b>：把 8 接到 9 下 → 列 9 8；再把 7 接到 8 下 → 列 9 8 7；同花且连续的段（9 8 7、K Q J 10…）可以整体拖到空列，或接到“比段底大 1”的牌之下继续延伸（如把 9 8 7 段接到 10 下 → 10 9 8 7）。</div>
-    <div class="rule"><b>示例</b>：♥6 接到 ♥7 下（列 7 6）；之后 6♥7♥ 段可整体放到 8 之下（微软官方示例）。</div>
-    <div class="rule"><b>技巧</b>：先制造空列；同花段越长越好，把 13 张同花 K→A 收齐即自动消除 +100（任意位置、任一方向都识别）。</div>
-    <div class="rule"><b>发牌</b>：下方「🃏 发牌」会给每列顶补一张新牌（共 5 次）。没有可动组合时先发牌；发完仍无解就「♻ 重开」。</div>
+    <div class="rule"><b>目标</b>：把同一花色的牌按 K→A 顺序接成完整 13 张连牌，凑齐一套自动收走并 +100；共 8 套，全部收齐即获胜。</div>
+    <div class="rule"><b>列</b>：10 列共 104 张（単色=红桃×8 组；4 花色=整副扑克×2）。每列上方是未翻开的盖牌簇，下方是明牌链——只有<b>列底（最下方）的牌翻开可操作</b>；把它全部移走后，紧挨着的盖牌会在原位自动翻开成明牌。</div>
+    <div class="rule"><b>移动（微软规则）</b>：明牌链向列底延伸，小 1 的牌接到“比它大 1”的翻开牌<b>之下</b>：把 8 接到 9 下 → 列 …9 8；再把 7 接到 8 下 → 列 …9 8 7。接牌<b>只能落到目标列最底部那张翻开牌</b>之下（空列除外），单张可跨花色接。</div>
+    <div class="rule"><b>整体拖动</b>：从列底开始、<b>同花色且降序连续</b>的牌段（9 8 7、K Q J 10…）可以像一张牌整体拖动：放到空列，或接到“比<b>段顶</b>大 1”的列底牌之下继续延伸（把 9 8 7 段接到 10 下 → …10 9 8 7）。升序（如 7 8 9）不算可拖段。</div>
+    <div class="rule"><b>示例</b>：♥6 接到 ♥7 下（列 7 6）；之后 ♥7♥6 段可整体放到 8 之下（微软官方示例，段顶 7 + 1 = 8）。</div>
+    <div class="rule"><b>收套</b>：列中凑出同花色、K(上)→A(下) 降序的完整 13 张即自动消除 +100（只认 K 上 A 下这一方向）。</div>
+    <div class="rule"><b>发牌</b>：下方「🃏 发牌」会给每列<b>最下方</b>补一张明牌（共 5 次）。没有可动组合时先发牌；发完仍无解就「♻ 重开」。</div>
     <div class="rule"><b>其它</b>：💡 提示帮你找可移动的组合；↩ 撤销；点击选牌后点目标列、或直接拖拽均可。</div>
     <button class="close">知道了</button>
   </div>
@@ -231,11 +234,14 @@ const IMG_BASE = "assets/spider/cards/";
 const CARD_FILE = (s, r) => `${IMG_BASE}${SUITS[s]}${RANK_NAME[r]}.jpg`;
 
 /* ============ 状态 ============ */
-/* 标准蜘蛛规则：
-   列 col = 视觉自上而下，col[0] 是列顶。
-   可整体拖动的段 = 列顶开始的同花降序连续（K,Q,J,…；任意长度含单张）。
-   放置：目标列为空；或目标列顶牌点数 = 段顶牌 + 1（花色不限）。
-   同花 K→A 连续 13 张出现即自动收走（可在列中任意位置）。 */
+/* 标准蜘蛛规则（微软，与 fSpider 等经典实现一致）：
+   列 col = 视觉自上而下；col[0] 是列最高处（最早发的牌），col 末尾是列的最下方。
+   结构恒为：上方盖牌簇（未翻开，细密 7px）＋ 下方明牌链；数组末尾那张翻开。
+   可整体拖动的段 = 从数组末尾（列底）起向上一段同花·降序连续（K,Q,J,…；任意长度含单张）。
+   放置：目标列为空；或接到目标列底部（数组末尾）翻开牌之下，该牌点数 = 段顶牌 + 1
+   （花色不限）。盖牌不可作为落点。
+   收套：同花且 K(顶)→A(底) 完整连续 13 张出现即自动收走。
+   发牌（stock）：每列最下方（数组末尾）push 一张翻开的新牌。 */
 let mode = "single";   // single: 単色红桃×8 / four: 整副×2 四花色
 let stacks = [];
 let reserve = [];
@@ -297,10 +303,11 @@ function newGame(m) {
   const sh = shuffled(deck);
   stacks = []; reserve = [];
   let k = 0;
+  // 微软开局：前 4 列 6 张、后 6 列 5 张；盖牌在上（数组头），最下面一张翻开
   for (let c = 0; c < 10; c++) {
     const n = c < 4 ? 6 : 5;
     const col = [];
-    for (let i = 0; i < n; i++) col.push({ ...sh[k++], up: i === 0 });
+    for (let i = 0; i < n; i++) col.push({ ...sh[k++], up: i === n - 1 });
     stacks.push(col);
   }
   reserve = sh.slice(k);
@@ -314,51 +321,44 @@ function newGame(m) {
 }
 
 /* ============ 规则 ============ */
-function segLen(col) {
-  // 列顶起同花连续段（相邻差 ±1 任一方向均可，取更长方向；微软可拖 6♥7♥ 也可拖 KQJ10）
-  if (!col.length || !col[0].up) return 0;
-  let a = 1;
-  while (a < col.length && col[a].up &&
-         col[a].r === col[a - 1].r - 1 && col[a].suit === col[a - 1].suit) a++;
-  let b = 1;
-  while (b < col.length && col[b].up &&
-         col[b].r === col[b - 1].r + 1 && col[b].suit === col[b - 1].suit) b++;
-  return Math.max(a, b);
+function segStart(col) {
+  // 微软：可拖段 = 从列底（数组末尾）向上、同花且降序（上方大 1）的连续段
+  // col 数组内自上而下递减：r[i] === r[i+1] + 1 且同花
+  let i = col.length - 1;
+  while (i > 0 && col[i].up && col[i - 1].up &&
+         col[i - 1].suit === col[i].suit && col[i - 1].r === col[i].r + 1) i--;
+  return i;
 }
-function segBottom(ci) {
-  // 段的最底牌（数组末端）
+function segLen(col) {
+  return col.length - segStart(col);
+}
+function segTopCard(ci) {
   const col = stacks[ci];
-  const n = segLen(col);
-  return col[n - 1];
+  return col[segStart(col)];
 }
 
 function canPlace(srcC, dstC) {
   if (srcC === dstC) return false;
   const s = stacks[srcC];
-  if (!s.length || !s[0].up) return false;
+  if (!s.length || !s[s.length - 1].up) return false;
   const d = stacks[dstC];
-  if (!d.length) return true;                     // 空列任意放
-  const bottom = segBottom(srcC);                 // 段底牌（微软：anchor = 段底 + 1）
-  return d.some(c => c.up && c.r === bottom.r + 1);
+  if (!d.length) return true;                     // 空列任意放（微软）
+  // 落点 = 目标列最底部翻开牌（非空列恒为数组末尾），须比段顶大 1
+  const last = d[d.length - 1];
+  if (!last.up) return false;
+  return last.r === segTopCard(srcC).r + 1;
 }
 
 function doMove(srcC, dstC) {
   snapshot();
-  const n = segLen(stacks[srcC]);
-  const seg = stacks[srcC].splice(0, n);
+  const col = stacks[srcC];
+  const start = segStart(col);
+  const seg = col.splice(start);
   const d = stacks[dstC];
-  if (!d.length) {
-    d.push(...seg);
-  } else {
-    // 微软式 build-down：段接到“段底+1”明牌的下方（9 上 8 下 7 的降序延伸）
-    // 例：把 8 放到 9 之下 → 列 [9,8]；再把 7 放到 8 之下 → [9,8,7]
-    const bottom = seg[seg.length - 1];
-    const j = d.findIndex(c => c.up && c.r === bottom.r + 1);
-    d.splice(j + 1, 0, ...seg);
-  }
+  d.push(...seg);                                 // 接到列底（数组末尾）
   moves++;
   const sc = stacks[srcC];
-  if (sc.length && !sc[0].up) { sc[0].up = true; sndFlip(); }
+  if (sc.length && !sc[sc.length - 1].up) { sc[sc.length - 1].up = true; sndFlip(); }
   sndMove();
   render(); updateHUD();
   collectAll();
@@ -367,26 +367,24 @@ function doMove(srcC, dstC) {
 }
 
 function collectAll() {
-  // 收套：列中任意位置出现 13 张同花、点数连续的窗口即收走。
-  // 列既可建成 A→K（顶小向下递增）也可建成 K→A 递减，两个方向都收。
+  // 收套（微软）：列中出现同花、且顶 K(13) → 底 A(1) 降序连续的完整 13 张即收走。
   let found = false;
   for (let ci = 0; ci < 10; ci++) {
     const col = stacks[ci];
     for (let j = 0; j + 13 <= col.length; j++) {
       const w = col.slice(j, j + 13);
       if (!w.every(c => c.up && c.suit === w[0].suit)) continue;
-      const d1 = w[1].r - w[0].r;                 // 单调方向
-      if (d1 !== 1 && d1 !== -1) continue;
+      if (w[0].r !== 13) continue;                    // 必须是 K 在顶
       let ok = true;
-      for (let i = 2; i < 13; i++) {
-        if (w[i].r - w[i - 1].r !== d1) { ok = false; break; }
+      for (let i = 1; i < 13; i++) {
+        if (w[i].r !== w[i - 1].r - 1) { ok = false; break; }   // A 在底降序
       }
       if (!ok) continue;
       col.splice(j, 13);
       setsDone++;
       found = true;
       sndSet();
-      toast(`K→A 一套收齐 +100 · ${setsDone} / 8`);
+      toast(`同花 K→A 一套收齐 +100 · ${setsDone} / 8`);
       const box = tableEl.children[ci];
       if (box) box.classList.add("win-flash");
       break;
@@ -399,12 +397,12 @@ function dealRow() {
   ensureAudio();
   if (!reserve.length) return;
   snapshot();
-  for (let c = 0; c < 10 && reserve.length; c++) stacks[c].unshift({ ...reserve.shift(), up: true });
+  for (let c = 0; c < 10 && reserve.length; c++) stacks[c].push({ ...reserve.shift(), up: true });
   moves++;
   render(); updateHUD();
   collectAll();
   statusLine();
-  toast("发牌：每列顶部 +1");
+  toast("发牌：每列下方 +1");
 }
 
 function allEmpty() { return stacks.every(c => c.length === 0); }
@@ -413,7 +411,7 @@ function statusLine() {
   const anyMove = findMove();
   let txt;
   if (setsDone >= 8) txt = "";
-  else if (anyMove) txt = "微软 build-down：把牌接到大 1 的牌之下（8 接 9 下 → 列 9 8 7…）· 同花段整拖 · 13 张自动收套";
+  else if (anyMove) txt = "微软规则：盖牌在上、明牌在列底——同花降序段整拖，接到「比段顶大 1」的列底牌下（9 8 7 → 10 下）· K 上 A 下 13 张自动收套";
   else if (reserve.length) txt = "暂时没有可移动的组合 —— 点「🃏 发牌」或继续整理";
   else txt = "没有可移动的组合且发牌已用完 —— 这局无法继续，点「♻ 重开」";
   $("turnBar").innerHTML = txt;
@@ -433,26 +431,25 @@ function render() {
   stacks.forEach((col, ci) => {
     const box = document.createElement("div");
     box.className = "col" + (sel && sel.col === ci ? " selcol" : "");
+    if (col.length) box.classList.add("has-cards");
     box.style.height = colH + "px";
-    // 微软视觉：整列牌连续错落，翻开牌被“后放”的牌盖下部、露上缘 34px；
-    // 未翻开的盖牌紧贴其上方翻开牌之下（露 12px 条，被翻开牌盖住其上部），彼此细密 6px
-    const tops2 = [];
-    let y2 = 4;
+    // 微软视觉（fSpider 同款）：col[0] 在列最高处。间距由“前一张牌”决定——
+    // 前一张盖牌：+7px（盖牌簇细密）；前一张明牌：+25~28px（明链错落露上缘）。
+    // 盖牌 z 低、明牌 z 高：明链从盖牌簇下方“长出来”，最底部那张明牌完整可见。
+    const tops = [];
+    let y2 = 0;
+    const downPad = 7;
+    const upPad = 26;
     for (let i = 0; i < col.length; i++) {
-      tops2[i] = y2;
-      if (i < col.length - 1) {
-        if (col[i + 1].up) y2 += 34;                 // 下一张是翻开牌
-        else if (col[i].up) y2 += 12;                // 明→盖：盖牌被明牌盖住上部、露 12px
-        else y2 += 6;                                // 盖-盖：细密堆叠
-      }
+      tops[i] = y2;
+      if (i < col.length - 1) y2 += col[i].up ? upPad : downPad;
     }
+    const start = segStart(col);
     for (let i = 0; i < col.length; i++) {
       const c = col[i];
       const card = document.createElement("div");
       card.className = "slot-card";
-      card.style.top = tops2[i] + "px";
-      // 翻开牌：z=100+i（翻开之间下方牌盖上方牌，露出上缘 34px）
-      // 盖牌：z=i（始终低于翻开牌，仅在列底以细堆呈现，不遮挡翻开牌主体）
+      card.style.top = tops[i] + "px";
       card.style.zIndex = (c.up ? 100 : 0) + i;
       if (!c.up) {
         card.classList.add("face-down");
@@ -464,12 +461,13 @@ function render() {
         img.src = FACES[c.suit][c.r].src;
         img.draggable = false;
         card.appendChild(img);
-        if (sel && sel.col === ci && i < sel.len) card.classList.add("sel");
+        if (sel && sel.col === ci && i >= start) card.classList.add("sel");
       }
       card.dataset.ci = ci;
       card.dataset.i = i;
       card.addEventListener("click", () => onClick(ci, i));
-      if (i === 0 && c.up) {
+      // 可拖段的最上面一张（段顶）作为拖拽抓手
+      if (i === start && c.up) {
         card.draggable = true;
         card.addEventListener("dragstart", e => onDragStart(e, ci));
         card.addEventListener("dragend", () => {
@@ -520,14 +518,8 @@ function onClick(ci, i) {
     }
     sel = null;
   }
-  if (col.length && !col[0].up && i === 0) {
-    col[0].up = true;
-    sndFlip();
-    snapshot();
-    render(); statusLine();
-    return;
-  }
-  if (col.length && col[0].up && segLen(col) >= 1) {
+  // 无选中：点可拖段内的牌 → 选中该段（盖牌与被压的明牌不可选）
+  if (col.length && i >= 0 && i >= segStart(col)) {
     sel = { col: ci, len: segLen(col) };
     render();
   }
@@ -535,7 +527,7 @@ function onClick(ci, i) {
 
 function onDragStart(e, ci) {
   const col = stacks[ci];
-  if (!col.length || !col[0].up) { e.preventDefault(); return; }
+  if (!col.length || !col[col.length - 1].up) { e.preventDefault(); return; }
   const len = segLen(col);
   if (!len) { e.preventDefault(); return; }
   sel = { col: ci, len };
@@ -601,7 +593,7 @@ $("hintBtn").addEventListener("click", () => {
     tableEl.children[mv.a].classList.remove("drop-ok");
     tableEl.children[mv.b].classList.remove("drop-ok");
   }, 2200);
-  toast(`可把「${RANK_NAME[stacks[mv.a][0].r]}」开头的同花段放到右侧高亮列`);
+  toast(`可把「${RANK_NAME[segTopCard(mv.a).r]}」开头的同花段放到右侧高亮列`);
 });
 $("helpBtn").addEventListener("click", () => $("helpModal").classList.add("show"));
 $("helpModal").addEventListener("click", e => {
