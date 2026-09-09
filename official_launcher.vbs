@@ -1,10 +1,13 @@
 ' EVA MiniGames OFFICIAL launcher (installed copy).
-'   1) start the local server (serve.py in THIS folder) on 127.0.0.1:8765 if not running
-'   2) open the game in an Edge/Chrome app window (fallback: default browser)
+'   Uses pywebview (WebView2 runtime, same renderer as the official exe):
+'   a real standalone app window - NO Edge/Chrome browser, no browser UI.
+'   1) if 127.0.0.1:8765 is not running, desktop.py starts the bundled server
+'      from THIS folder (serve.py here); otherwise it reuses the running one
+'   2) opens the game in its own window via pythonw desktop.py
 ' NOTE: exe entry is blocked on some machines by App Control policy; VBS is not.
 Option Explicit
 
-Dim fso, sh, http, up, i, edge, chrome, dir, py
+Dim fso, sh, http, dir, py, pyw
 Set fso = CreateObject("Scripting.FileSystemObject")
 Set sh = CreateObject("WScript.Shell")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)
@@ -19,26 +22,6 @@ Function ServerUp()
   On Error Goto 0
 End Function
 
-up = ServerUp()
-If Not up Then
-  sh.CurrentDirectory = dir
-  sh.Run "cmd /c cd /d """ & dir & """ && start /b python serve.py", 0, False
-  For i = 1 To 12
-    WScript.Sleep 500
-    If ServerUp() Then Exit For
-  Next
-End If
-
-' Edge app mode (window without browser chrome)
-edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-If Not fso.FileExists(edge) Then edge = "C:\Program Files\Microsoft\Edge\Application\msedge.exe"
-chrome = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-If Not fso.FileExists(chrome) Then chrome = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-
-If fso.FileExists(edge) Then
-  sh.Run """" & edge & """ --app=http://127.0.0.1:8765/index.html", 1, False
-ElseIf fso.FileExists(chrome) Then
-  sh.Run """" & chrome & """ --app=http://127.0.0.1:8765/index.html", 1, False
-Else
-  sh.Run "http://127.0.0.1:8765/index.html", 1, False
-End If
+' launch the game window (desktop.py handles server start/reuse itself)
+sh.CurrentDirectory = dir
+sh.Run "cmd /c cd /d """ & dir & """ && start """" pythonw desktop.py", 0, False

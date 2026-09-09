@@ -26,3 +26,10 @@
 
 ## 待用户确认
 - 双击桌面「EVA小游戏」图标打开游戏窗口（Edge 呈现环节需人工点验）
+
+## 追加（用户反馈：不要依赖 Edge）
+- vbs 启动器弃用 Edge/Chrome --app，改为 `pythonw desktop.py`（pywebview /
+  WebView2 runtime，与正式 exe 同一渲染器）：独立应用窗口、无浏览器 UI
+- desktop.py 已复制进安装目录；窗口实测：pythonw 进程 + 窗口标题
+  "EVA 小游戏 · 明日香 × 绫波丽" + msedgewebview2 渲染进程
+- 安装目录版本与 zip/Release 分发不受影响（exe 分发机器无 WDAC）
