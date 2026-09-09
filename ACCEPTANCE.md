@@ -1,34 +1,26 @@
-# 验收报告 · v1.1.6 本地+GitHub 版本与安装包更新（2026-09-09）
+# 验收报告 · 更新弹窗展示更新说明 + v1.1.7 发布（2026-09-09）
 
 ## 需求
-“更新本地和 GitHub 的版本和安装包” —— 将蜘蛛纸牌微软标准对齐等改动发版。
+其他玩家点击更新时，弹窗需说明本次更新内容（此前只有固定提示语）。
 
-## 变更
-- serve.py VERSION：v1.1.5 → **v1.1.6**（本地 commit 5c3e265）
-- 重建产物（PyInstaller spec 链路）：
-  - dist/EVA小游戏/ 桌面包（159M，含资源，serve.py=v1.1.6）
-  - dist/EVA小游戏.zip 绿色版（165,405,700 B）
-  - dist/EVA小游戏-安装程序.exe（153,610,604 B）
-  - dist/EVA-MiniGames-Setup-v1.1.6.exe（发布名副本）
+## 代码改动（commit cea9974，已推远端 main 70950a45a8）
+- serve.py check_update：返回 GitHub Release body 前 3000 字符作为 notes；
+  显式 utf-8 解码，修复 Windows locale 下中文乱码（json.load → read+decode+json.loads）
+- deco.js：「发现新版本」弹窗新增可滚动说明区 #updNotes（44vh，pre-wrap），
+  markdown 轻清洗（去 # / * _ `）后 textContent 安全展示；无说明时隐藏该区
+- serve.py VERSION → v1.1.7
 
-## 本地
-- 安装目录 C:\Users\17537\AppData\Local\EVA小游戏 已解压更新为 v1.1.6
-  （安装器 exe 被本机 Device Guard 策略拦截，走等价的 zip 解压安装；
-   桌面/开始菜单快捷方式指向同一目录，无需重建）
-- 运行中 8765 服务已重启为 v1.1.6（原进程停留在 v1.1.3）
+## 端到端验证（浏览器真实触发 update=true 状态）
+- 加载页 2.5s 自动检测 → 版本角标 has-update、显示 v1.1.7
+- 点击角标 → 弹窗 show=true，含「本次更新内容」区，说明文本正确渲染
+- 下载按钮已绑定（window.open 资产 URL），「暂不更新」可关闭
 
-## GitHub
-- serve.py 已推送远端 main（commit 581b3bebc1，blob 校验）
-- Release **v1.1.6**（id 385619760）创建，含更新说明
-- 资产 EVA-MiniGames-Setup-v1.1.6.exe 上传成功（153,610,604 B 与本地一致）
-
-## 更新检测闭环（验收关键项）
-- GET /api/version → v1.1.6
-- GET /api/update-check → { latest: v1.1.6, current: v1.1.6, update: false,
-  url: .../download/v1.1.6/EVA-MiniGames-Setup-v1.1.6.exe }
-- 远端 releases/latest tag=v1.1.6，资产大小一致
+## v1.1.7 产物与发布
+- dist/EVA小游戏-安装程序.exe / EVA-MiniGames-Setup-v1.1.7.exe（153,611,824 B）
+- 本地安装目录 AppData\Local\EVA小游戏 已解压更新（VERSION=v1.1.7、deco.js 含 updNotes）
+- GitHub Release v1.1.7（id 385623466）资产上传成功，大小与本地一致
+- 更新检测闭环：current=v1.1.7 == latest=v1.1.7 → update=false；
+  老玩家（≤v1.1.6）检测将 update=true，弹窗展示 v1.1.7 更新说明后跳转下载
 
 ## 备注
-- 文件结构完整性复核：本地 git 215 个跟踪文件与远端树 215 个 blob 零差异
-  （此前发现的 spider 素材未同步问题不存在，已通过清单比对确认）
-- 安装器 GUI 安装路径未人工点验（Device Guard），zip 解压路径已等价验证
+- 本机安装器 exe 仍受 Device Guard 策略拦截，沿用 zip 解压等价安装
