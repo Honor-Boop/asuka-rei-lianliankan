@@ -61,7 +61,7 @@
   .controls .sep { width: 1px; background: var(--panel-border); margin: 0 2px; }
 
   /* ---------- 棋盘 ---------- */
-  /* max-width+overflow：99×99 这类超大棋盘格子有最小尺寸，宽度可能超过可用空间，
+  /* max-width+overflow：36×36 这类大棋盘在窄窗口下宽度可能超过可用空间，
      限制在容器内横向滚动，避免压到两侧装饰栏 */
   #boardWrap { position: relative; margin-top: 4px; max-width: 100%; overflow-x: auto; }
   #grid {
@@ -204,7 +204,7 @@
   <div class="controls">
     <button data-d="easy">見習い 9×9</button>
     <button data-d="normal">正規隊員 16×16</button>
-    <button data-d="hard">使徒級·S2 99×99</button>
+    <button data-d="hard">使徒級·S2 36×36</button>
     <span class="sep"></span>
     <button id="newBtn">♻ 重开</button>
     <button id="modeBtn">🎮 玩法选择</button>
@@ -241,7 +241,7 @@
 const DIFFS = {
   easy:   { name: "見習い訓練", rows: 9,  cols: 9,  mines: 10 },
   normal: { name: "正規隊員",   rows: 16, cols: 16, mines: 40 },
-  hard:   { name: "使徒級·S2",  rows: 99, cols: 99, mines: 999 },
+  hard:   { name: "使徒級·S2",  rows: 36, cols: 36, mines: 200 },
 };
 const AVATAR = { 1: "images/rei_15.jpg", 2: "images/asuka_5.jpg" }; // 双主角头像
 
