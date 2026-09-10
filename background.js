@@ -129,6 +129,16 @@
   window.__bgPaused = () => !timer;
   window.__bgList = () => LIST.slice();
   window.__bgCurrent = () => current;
+  window.__bgCurrentItem = () => LIST[current] || null;
+  // 跳到指定壁纸（图库面板「设为背景」用）：接受下标或 src
+  window.__bgShowSrc = async function (srcOrIndex) {
+    const i = typeof srcOrIndex === "number"
+      ? srcOrIndex : LIST.findIndex(w => w.src === srcOrIndex);
+    if (i < 0 || i >= LIST.length) return false;
+    await show(i);
+    schedule();          // 从这张起继续轮换
+    return true;
+  };
 
   // 首页随机起点
   show(Math.floor(Math.random() * LIST.length)).then(schedule);
