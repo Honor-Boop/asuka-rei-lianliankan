@@ -477,6 +477,11 @@
         <span>双主角协同排雷<br>使徒即地雷 · 三种规模</span>
         <em>扫雷</em>
       </button>
+      <button class="diff-opt mode-opt" data-mode="sudoku">
+        <b>数独 · 9×9</b>
+        <span>三档难度 · 唯一解盘面<br>候选数 + 提示 + 战绩</span>
+        <em>数阵</em>
+      </button>
     </div>
     <button id="modeCancel" style="display:none;margin-top:18px;font-family:inherit;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:8px 22px;cursor:pointer">返回当前对局</button>
   </div>
@@ -1377,6 +1382,7 @@ document.querySelectorAll(".mode-opt").forEach(btn => {
     if (btn.dataset.mode === "view") { location.href = "view.html"; return; }
     if (btn.dataset.mode === "spider") { location.href = "spider.html"; return; }
     if (btn.dataset.mode === "mine") { location.href = "mine.html"; return; }
+    if (btn.dataset.mode === "sudoku") { location.href = "sudoku.html"; return; }
     if (diffKey) resumeTimer(); else openDiff(false);
   });
 });
