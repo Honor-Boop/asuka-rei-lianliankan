@@ -1,52 +1,52 @@
-# 验收报告 · v1.1.8 整合发版（数独 + 图库扩展 + 图标）（2026-09-10）
+# 验收报告 · 修复桌面快捷方式消失（2026-09-10）
 
-## 需求
-“整合前面和刚刚的修改，更新安装包和 release，写出更新内容。”
+## 用户反馈
+“本地的桌面快捷方式怎么没了”
 
-## 整合内容（v1.1.8）
-1. **9×9 数独**（新玩法）：唯一解生成器、三档难度（44/34/27 提示格）、候选数、即错提醒、
-   提示、撤销、计时与最佳记录、结算横幅
-2. **图库扩展**：新增 `gallery_panel.js` 浮层组件（角色筛选 / 缩略图墙 / 灯箱翻页 /
-   设为背景 / 跳完整图库 / G 键），并接入 6 个页面；入口为**页面底部的连连看同款页脚链接**
-3. **凌波丽图标**（桌面快捷方式 + 打包 exe + 安装程序统一）
-4. `background.js` 新增 `__bgCurrentItem()` / `__bgShowSrc()`
+## 根因（我的操作失误）
+本机启用了应用程序控制策略（WDAC），PyInstaller 生成的无签名 exe 会被拦截，
+所以本机游戏入口走的是 `EVA小游戏.vbs → pythonw desktop.py`（pywebview 独立窗口）。
+而 `EVA小游戏.vbs` 与 `desktop.py` 是**本地专用文件、不在分发包 zip 里**。
 
-## 交付产物
-| 产物 | 大小 | 说明 |
-| --- | --- | --- |
-| `dist/EVA小游戏/` | — | 桌面绿色版目录，serve.py VERSION=v1.1.8，含 sudoku.html / gallery_panel.js |
-| `dist/EVA小游戏.zip` | 166,187,395 B | 390 个条目 |
-| `dist/EVA小游戏-安装程序.exe` | 154,421,705 B | 单文件安装程序（内嵌上述 zip，凌波丽图标） |
-| `dist/EVA-MiniGames-Setup-v1.1.8.exe` | 154,421,705 B | 发布命名副本 |
+上一轮更新本地版本时，我用「删除安装目录 → 整目录解压 zip」的方式覆盖，
+把这两个文件一起删掉了 → 桌面/开始菜单快捷方式的目标不存在 →
+桌面那两个快捷方式消失（探查时桌面上只剩 EVA刷新启动 / 明日香&凌波丽连连看），
+开始菜单 `EVA小游戏.lnk` 指向的 vbs 也已失效（exists=False）。
 
-新增 `scripts/build_release.py` 固化打包流程（构建 → 拷资源 → zip → 内嵌安装程序 → 发布命名），
-含关键资源在位校验与 serve.py 版本一致性校验；`scripts/release_notes_v1.1.8.md` 为 Release 说明源文件。
+## 修复
+新增 `scripts/refresh_local.py`（本机刷新脚本，根治此问题）：
+1. 解压 `dist/EVA小游戏.zip` 到安装目录
+2. 补回本地专用文件：`EVA小游戏.vbs`（来自项目根 `official_launcher.vbs`）+ `desktop.py`
+3. 重建快捷方式：桌面 `EVA小游戏.lnk`、`EVA小游戏 - 快捷方式.lnk` 与开始菜单 `EVA小游戏.lnk`
+   （目标=vbs，图标=assets/icon_rei.ico，描述含玩法清单）
+4. 清理失效/重复的开始菜单项
+5. 校验关键文件在位并打印 serve.py 版本
+（PS 调用统一走 UTF-16LE+base64，`$ProgressPreference='SilentlyContinue'` 去噪；
+ 启动器模板改为直接读取文件，避免 VBS 里 `""""` 转义踩坑）
+
+`DEVELOPMENT.md` 增加「发版与本地刷新（脚本化）」章节，写明为什么必须用该脚本刷新。
 
 ## 验证证据
 
-### 1. 打包产物完整性
-`build_release.py` 输出：bundled VERSION=v1.1.8；关键资源校验通过
-（sudoku.html / spider.html / gallery_panel.js / deco.js / background.js / serve.py 全部在位）。
+### 1. 快捷方式已恢复（探查实测）
+桌面：`EVA小游戏.lnk` → `...\EVA小游戏\EVA小游戏.vbs` exists=True
+　　　`EVA小游戏 - 快捷方式.lnk` → 同上 exists=True
+开始菜单：仅剩 1 个干净的 `EVA小游戏.lnk` → vbs exists=True
+（原先失效的 `EVA小游戏 (2).lnk`、`EVA连连看.lnk` 已清理）
 
-### 2. 安装目录副本实跑（用 dist 解压后的副本另起 8766 端口）
-`/api/version` = v1.1.8；sudoku.html 200(32,493B) / spider.html 200 / gallery_panel.js 200 / index.html 200。
-逐页加载 index / sudoku / spider / mine / gomoku / view：底部图例文字均为
-「明日香 × 绫波丽 · 🖼 壁纸图库」，点击均就地打开图库浮层并渲染 39 张缩略图。
+### 2. 双击启动链路实测（先杀掉旧窗口与 8765 服务，从零启动）
+桌面图标 → vbs → pythonw desktop.py：
+- `WINDOW OK: EVA 小游戏 · 明日香 × 绫波丽`（独立应用窗口，无浏览器 UI）
+- 安装目录内 serve.py 自启：`/api/version` = **v1.1.8**
+- 该服务正常提供 `sudoku.html` / `gallery_panel.js` / `index.html`（均 HTTP 200）
 
-### 3. 本地更新
-安装目录已解压更新为 v1.1.8（sudoku.html / gallery_panel.js 在位）；运行中服务重启为 v1.1.8。
+### 3. 脚本自校验
+launcher / desktop.py / serve.py / sudoku.html / gallery_panel.js 全部在位，版本 v1.1.8。
 
-### 4. 真实用户更新场景（模拟旧版客户端，8767 端口报 v1.1.7）
-- 角标显示 v1.1.7、`has-update` 高亮，title「发现新版 v1.1.8，点击更新」
-- 点击弹窗：`show=true`，正文「当前版本 v1.1.7，发现新版本 v1.1.8。下载安装包覆盖安装即可（存档与图库保留）。」
-- 更新说明区 932 字、可滚动（max-height 348px），含数独 / 图库扩展 / 蜘蛛纸牌 三节
-
-### 5. GitHub Release
-- Release **v1.1.8**「EVA 小游戏 v1.1.8 · 数独 + 图库扩展」，说明 967 字（来自 notes 文件）
-- 资产 `EVA-MiniGames-Setup-v1.1.8.exe` 上传成功，远端大小 154,421,705 B 与本地一致
-- 更新检测闭环：current=v1.1.8 == latest=v1.1.8 → `update=false`；url 指向 v1.1.8 资产
+## 同步
+- git：commit 72494dd（scripts/refresh_local.py、DEVELOPMENT.md）
+- 未改动分发包与 Release（v1.1.8 无变化）；分发包保持只有 exe 入口，适合其他玩家
 
 ## 备注
-- 本机 WDAC 策略仍拦截 exe 直接运行（安装目录用 zip 解压方式更新，效果等价）；
-  其他玩家机器无此策略，安装包可正常双击安装
-- 测试用的临时服务（8766/8767）与脚本已清理
+以后更新本机版本请用 `python scripts/refresh_local.py`，不要手工解压覆盖安装目录，
+否则 vbs 启动器会再次被删除、快捷方式失效。

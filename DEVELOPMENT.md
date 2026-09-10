@@ -29,3 +29,20 @@
 - 结算"用时"在奖励时间超过初始时限时会算出负数
 - 抓图脚本的去重键错误（URL 文件名对 md5 键比较），后改为按内容 md5 去重
 - 本机全局 gitconfig 给 github.com 配置的代理未运行，推送需临时绕过
+
+## 发版与本地刷新（脚本化）
+
+- `scripts/build_release.py`：一键打包 —— 桌面程序（PyInstaller）→ 拷网页资源（排除 `*-test.js`）
+  → 绿色版 zip → 内嵌 zip 的单文件安装程序 → 发布命名副本
+  `EVA-MiniGames-Setup-<版本>.exe`；含关键资源在位校验与 serve.py 版本校验。
+- `scripts/refresh_local.py`：刷新**本机**安装目录并重建快捷方式。
+  解压 zip 到安装目录后，会补回两个**不在分发包里**的本地文件：
+  `EVA小游戏.vbs`（启动器，来自 `official_launcher.vbs`）与 `desktop.py`，
+  然后重建桌面 / 开始菜单快捷方式（指向 vbs，凌波丽图标）并清理失效项。
+
+  > 为什么需要它：本机启用了应用程序控制策略（WDAC），PyInstaller 生成的无签名 exe
+  > 会被拦截，所以本机入口走 `vbs → pythonw desktop.py`（pywebview 独立窗口）。
+  > vbs 与 desktop.py 属于本地专用（依赖系统 Python），不进分发包，因此
+  > **每次覆盖更新安装目录都会把它们删掉** —— 必须用本脚本刷新，否则快捷方式会失效。
+
+  用法：`python scripts/refresh_local.py`（可选 `--zip` / `--target`）
