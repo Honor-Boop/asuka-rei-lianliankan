@@ -17,6 +17,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import zipfile
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,19 +31,51 @@ LAUNCHER_SRC = os.path.join(BASE, "official_launcher.vbs")
 
 
 def ps(cmd):
-    """以 UTF-16LE + base64 传 PowerShell，避免中文/引号编码问题。"""
+    """以 UTF-16LE + base64 传 PowerShell，避免中文/引号编码问题。
+
+    只回传 stdout：PS 5.1 会把 Write-Host 的信息流以 CLIXML 形式塞进 stderr，属噪音。
+    """
     cmd = "$ProgressPreference='SilentlyContinue';" + cmd
     out = subprocess.run(
         ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
          "-EncodedCommand", base64.b64encode(cmd.encode("utf-16-le")).decode()],
         capture_output=True)
-    return out.stdout.decode("gbk", "replace") + out.stderr.decode("gbk", "replace")
+    text = out.stdout.decode("gbk", "replace")
+    if not text.strip() and out.returncode != 0:
+        text = out.stderr.decode("gbk", "replace")
+    return text
+
+
+def _kill_running(app_dir):
+    """关掉本机正在运行的该游戏实例（pythonw desktop.py / 8765 服务），否则目录被占用。"""
+    out = ps(f'''
+$n = 0
+Get-CimInstance Win32_Process -Filter "Name = 'pythonw.exe'" |
+  Where-Object {{ $_.CommandLine -match 'desktop\\.py' }} |
+  ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; $n++; Write-Host ("  关闭游戏窗口 pid=" + $_.ProcessId) }}
+$c = Get-NetTCPConnection -LocalPort 8765 -State Listen -ErrorAction SilentlyContinue
+if ($c) {{ Stop-Process -Id $c.OwningProcess -Force -ErrorAction SilentlyContinue; Write-Host "  关闭 8765 本地服务" }}
+if ($n -eq 0 -and -not $c) {{ Write-Host "  （没有运行中的实例）" }}
+''')
+    print(out.strip())
+    time.sleep(1.5)
 
 
 def extract(zip_path, target):
     app_dir = os.path.join(target, APP_NAME)
     if os.path.isdir(app_dir):
-        shutil.rmtree(app_dir)
+        try:
+            shutil.rmtree(app_dir)
+        except PermissionError:
+            print("安装目录被占用 → 先关闭正在运行的游戏实例")
+            _kill_running(app_dir)
+            try:
+                shutil.rmtree(app_dir)
+            except PermissionError:
+                print("仍被占用 → 改为就地覆盖（保留无法删除的文件）")
+                with zipfile.ZipFile(zip_path) as z:
+                    z.extractall(target)
+                return app_dir
     with zipfile.ZipFile(zip_path) as z:
         z.extractall(target)
     return app_dir
@@ -129,7 +162,7 @@ Write-Host "=== 快捷方式现状 ==="
 foreach ($p in @((Join-Path $desk '{APP_NAME}.lnk'), (Join-Path $desk '{APP_NAME} - 快捷方式.lnk'), (Join-Path $menu '{APP_NAME}.lnk'))) {{
   if (Test-Path $p) {{
     $l = $ws.CreateShortcut($p)
-    Write-Host ("  " + (Split-Path $p -Leaf) + " -> " + $l.TargetPath + " exists=" + (Test-Path $l.TargetPath))
+    Write-Host ("  [OK] " + (Split-Path $p -Leaf) + " -> " + $l.TargetPath + " exists=" + (Test-Path $l.TargetPath))
   }} else {{ Write-Host ("  [缺失] " + $p) }}
 }}
 '''))

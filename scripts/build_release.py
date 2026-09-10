@@ -9,8 +9,13 @@
      → dist/EVA小游戏-安装程序.exe
   5. 复制一份发布命名 dist/EVA-MiniGames-Setup-<版本>.exe
 
-用法：python scripts/build_release.py [版本号]
+用法：python scripts/build_release.py [版本号] [--no-local]
     版本号省略时读取 serve.py 里的 VERSION。
+
+  构建完成后会**自动**同步本机安装目录并重建桌面/开始菜单快捷方式
+  （调用 scripts/refresh_local.py；本机入口靠 vbs 启动器，整目录覆盖会删掉它）。
+  --no-local  跳过本机刷新（只出分发包）
+  --local-only 不构建，只刷新本机安装目录与快捷方式
 """
 import os
 import re
@@ -99,13 +104,55 @@ def step_build_installer(version):
     print("installer:", out, os.path.getsize(out), "bytes")
 
 
+def step_refresh_local():
+    """同步本机安装目录并重建桌面/开始菜单快捷方式。
+
+    本机入口是 vbs 启动器（WDAC 拦截无签名 exe），而 vbs 与 desktop.py 不在分发包里，
+    整目录覆盖更新会把它们删掉、导致快捷方式失效 —— 所以这里必须跟在构建后面自动执行。
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import refresh_local as rl
+    print(">> 同步本机安装目录 + 重建快捷方式")
+    app_dir = rl.extract(ZIP_PATH, rl.DEFAULT_TARGET)
+    launcher = rl.write_launcher(app_dir)
+    rl.make_shortcuts(app_dir, launcher)
+    print(rl.ps(f'''
+$ws = New-Object -ComObject WScript.Shell
+$desk = [Environment]::GetFolderPath('Desktop')
+$menu = Join-Path $env:APPDATA 'Microsoft\\Windows\\Start Menu\\Programs'
+Write-Host "=== 快捷方式 ==="
+foreach ($p in @((Join-Path $desk '{rl.APP_NAME}.lnk'), (Join-Path $desk '{rl.APP_NAME} - 快捷方式.lnk'), (Join-Path $menu '{rl.APP_NAME}.lnk'))) {{
+  if (Test-Path $p) {{
+    $l = $ws.CreateShortcut($p)
+    Write-Host ("  [OK] " + (Split-Path $p -Leaf) + " -> " + $l.TargetPath + " exists=" + (Test-Path $l.TargetPath))
+  }} else {{ Write-Host ("  [缺失] " + $p) }}
+}}
+'''))
+    if not rl.verify(app_dir, launcher):
+        raise SystemExit("本机安装目录校验失败")
+    print(">> 本机快捷方式已更新（桌面 + 开始菜单）")
+
+
 def main():
-    version = sys.argv[1] if len(sys.argv) > 1 else read_version()
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    flags = {a for a in sys.argv[1:] if a.startswith("--")}
+    version = args[0] if args else read_version()
+
+    if "--local-only" in flags:
+        print("=== 仅刷新本机（不构建）", version, "===")
+        step_refresh_local()
+        print("=== 完成 ===")
+        return
+
     print("=== 打包", version, "===")
     step_build_desktop()
     step_copy_assets()
     step_zip()
     step_build_installer(version)
+    if "--no-local" in flags:
+        print(">> 跳过本机刷新（--no-local）")
+    else:
+        step_refresh_local()
     print("=== 完成 ===")
 
 

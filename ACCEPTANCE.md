@@ -1,52 +1,33 @@
-# 验收报告 · 修复桌面快捷方式消失（2026-09-10）
+# 验收报告 · 更新流程固化“必更新桌面快捷启动方式”（2026-09-10）
 
-## 用户反馈
-“本地的桌面快捷方式怎么没了”
+## 用户要求
+“之后再更新记得更新桌面的快捷启动方式。”
 
-## 根因（我的操作失误）
-本机启用了应用程序控制策略（WDAC），PyInstaller 生成的无签名 exe 会被拦截，
-所以本机游戏入口走的是 `EVA小游戏.vbs → pythonw desktop.py`（pywebview 独立窗口）。
-而 `EVA小游戏.vbs` 与 `desktop.py` 是**本地专用文件、不在分发包 zip 里**。
-
-上一轮更新本地版本时，我用「删除安装目录 → 整目录解压 zip」的方式覆盖，
-把这两个文件一起删掉了 → 桌面/开始菜单快捷方式的目标不存在 →
-桌面那两个快捷方式消失（探查时桌面上只剩 EVA刷新启动 / 明日香&凌波丽连连看），
-开始菜单 `EVA小游戏.lnk` 指向的 vbs 也已失效（exists=False）。
-
-## 修复
-新增 `scripts/refresh_local.py`（本机刷新脚本，根治此问题）：
-1. 解压 `dist/EVA小游戏.zip` 到安装目录
-2. 补回本地专用文件：`EVA小游戏.vbs`（来自项目根 `official_launcher.vbs`）+ `desktop.py`
-3. 重建快捷方式：桌面 `EVA小游戏.lnk`、`EVA小游戏 - 快捷方式.lnk` 与开始菜单 `EVA小游戏.lnk`
-   （目标=vbs，图标=assets/icon_rei.ico，描述含玩法清单）
-4. 清理失效/重复的开始菜单项
-5. 校验关键文件在位并打印 serve.py 版本
-（PS 调用统一走 UTF-16LE+base64，`$ProgressPreference='SilentlyContinue'` 去噪；
- 启动器模板改为直接读取文件，避免 VBS 里 `""""` 转义踩坑）
-
-`DEVELOPMENT.md` 增加「发版与本地刷新（脚本化）」章节，写明为什么必须用该脚本刷新。
+## 落地方式（不靠记性，写进流程）
+1. **打包脚本自动带上本机刷新**：`scripts/build_release.py` 构建完成后会**自动**执行
+   本机同步 —— 解压分发包到安装目录 → 补回本地专用启动器（`EVA小游戏.vbs` + `desktop.py`）
+   → 重建桌面与开始菜单快捷方式 → 校验文件与版本。
+   - `--no-local`：只出分发包，不动本机
+   - `--local-only`：不构建，只刷新本机安装目录与快捷方式
+   - 刷新失败（如安装目录被占用且无法清理）会以退出码 2 报错，避免“悄悄没更新”
+2. **占用自动处理**：安装目录被运行中的游戏占用时（pythonw desktop.py / 8765 服务），
+   脚本会自动关闭本机自身实例后重试，再退化为就地覆盖，并打印实际动作。
+3. **文档**：`DEVELOPMENT.md` 的「发版与本地刷新（脚本化）」写明
+   build_release 自动刷新、两个开关的用途，以及为什么必须刷新（vbs 启动器不在分发包里）。
+4. **记忆**：已把项目发版流程与本机 WDAC/vbs 启动器约束写入长期记忆，跨会话生效。
 
 ## 验证证据
+- `python scripts/build_release.py --local-only`
+  · 首次运行：正确识别安装目录被占用 → `关闭游戏窗口 pid=21360` → 重解压 → 重建快捷方式
+  · 重复运行：输出干净（PS 的 CLIXML 噪音已过滤；✓/✗ 改 ASCII 避免 GBK 乱码）
+  · 校验通过：启动器 / desktop.py / serve.py / sudoku.html / gallery_panel.js 全在位，版本 v1.1.8
+- 快捷方式确认（实测三项，目标均存在）：
+  · 桌面 `EVA小游戏.lnk` → `...\EVA小游戏\EVA小游戏.vbs`
+  · 桌面 `EVA小游戏 - 快捷方式.lnk` → 同上
+  · 开始菜单 `EVA小游戏.lnk` → 同上
+- 双击启动链路实测（`Start-Process` 桌面 .lnk）：
+  窗口标题「EVA 小游戏 · 明日香 × 绫波丽」，安装目录服务 `/api/version` = v1.1.8
 
-### 1. 快捷方式已恢复（探查实测）
-桌面：`EVA小游戏.lnk` → `...\EVA小游戏\EVA小游戏.vbs` exists=True
-　　　`EVA小游戏 - 快捷方式.lnk` → 同上 exists=True
-开始菜单：仅剩 1 个干净的 `EVA小游戏.lnk` → vbs exists=True
-（原先失效的 `EVA小游戏 (2).lnk`、`EVA连连看.lnk` 已清理）
-
-### 2. 双击启动链路实测（先杀掉旧窗口与 8765 服务，从零启动）
-桌面图标 → vbs → pythonw desktop.py：
-- `WINDOW OK: EVA 小游戏 · 明日香 × 绫波丽`（独立应用窗口，无浏览器 UI）
-- 安装目录内 serve.py 自启：`/api/version` = **v1.1.8**
-- 该服务正常提供 `sudoku.html` / `gallery_panel.js` / `index.html`（均 HTTP 200）
-
-### 3. 脚本自校验
-launcher / desktop.py / serve.py / sudoku.html / gallery_panel.js 全部在位，版本 v1.1.8。
-
-## 同步
-- git：commit 72494dd（scripts/refresh_local.py、DEVELOPMENT.md）
-- 未改动分发包与 Release（v1.1.8 无变化）；分发包保持只有 exe 入口，适合其他玩家
-
-## 备注
-以后更新本机版本请用 `python scripts/refresh_local.py`，不要手工解压覆盖安装目录，
-否则 vbs 启动器会再次被删除、快捷方式失效。
+## 结论
+以后每次更新（`python scripts/build_release.py`）都会自动把本机安装目录和
+桌面/开始菜单快捷启动方式一起更新，不会再出现快捷方式失效或消失。

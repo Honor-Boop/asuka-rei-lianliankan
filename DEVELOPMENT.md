@@ -35,6 +35,8 @@
 - `scripts/build_release.py`：一键打包 —— 桌面程序（PyInstaller）→ 拷网页资源（排除 `*-test.js`）
   → 绿色版 zip → 内嵌 zip 的单文件安装程序 → 发布命名副本
   `EVA-MiniGames-Setup-<版本>.exe`；含关键资源在位校验与 serve.py 版本校验。
+- `scripts/build_release.py` 构建完成后会**自动**调用本机刷新（更新安装目录 + 重建桌面/开始菜单快捷方式）；
+  只出分发包时加 `--no-local`，只刷新本机时用 `--local-only`。
 - `scripts/refresh_local.py`：刷新**本机**安装目录并重建快捷方式。
   解压 zip 到安装目录后，会补回两个**不在分发包里**的本地文件：
   `EVA小游戏.vbs`（启动器，来自 `official_launcher.vbs`）与 `desktop.py`，
