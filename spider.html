@@ -101,6 +101,14 @@
   .col.drop-ok { border-color: rgba(112,255,184,.8); background: rgba(112,255,184,.1);
                  box-shadow: inset 0 0 20px rgba(112,255,184,.12); }
   .slot-card.dragging { opacity: .35; }
+  /* 可整段拖动的牌：抓手光标 + 悬停高亮；被压住的牌：禁止光标 */
+  .slot-card.movable { cursor: grab; }
+  .slot-card.movable:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 0 0 2px rgba(112,255,184,.65), 0 2px 10px rgba(0,0,0,.5);
+  }
+  .slot-card.movable:active { cursor: grabbing; }
+  .slot-card.blocked { cursor: not-allowed; }
   .win-flash { animation: wf .7s ease-in-out; }
   @keyframes wf { 50% { box-shadow: 0 0 24px rgba(255,224,102,.9); } }
 
@@ -467,8 +475,10 @@ function render() {
       card.dataset.ci = ci;
       card.dataset.i = i;
       card.addEventListener("click", () => onClick(ci, i));
-      // 可拖段的最上面一张（段顶）作为拖拽抓手
-      if (i === start && c.up) {
+      // 可拖段内**任意一张**都能作为拖拽抓手（整段一起移动）；
+      // 被压在下面的明牌不可拖，给出「禁止」光标以免误以为程序卡住。
+      if (c.up && i >= start) {
+        card.classList.add("movable");
         card.draggable = true;
         card.addEventListener("dragstart", e => onDragStart(e, ci));
         card.addEventListener("dragend", () => {
@@ -476,6 +486,8 @@ function render() {
           if (sel && sel.col === ci) sel = null;
           render();
         });
+      } else if (c.up) {
+        card.classList.add("blocked");
       }
       box.appendChild(card);
     }
