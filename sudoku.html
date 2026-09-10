@@ -453,7 +453,8 @@ function newGame(d) {
 
 /* ============ 布局 / 渲染 ============ */
 function layout() {
-  const availW = Math.min(window.innerWidth - 90, 560);
+  const gut = window.__decoGutter || 0;              // 两侧装饰栏占用的宽度
+  const availW = Math.min(window.innerWidth - 90 - 2 * gut, 560);
   const availH = window.innerHeight - 300;
   cs = Math.max(30, Math.min(56, Math.floor(Math.min(availW, availH) / 9)));
   document.documentElement.style.setProperty("--cs", cs + "px");

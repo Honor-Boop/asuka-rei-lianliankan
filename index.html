@@ -740,7 +740,8 @@ function paintTile(i) {
 function paintAll() { for (let i = 0; i < grid.length; i++) paintTile(i); }
 
 function layout() {
-  const availW = Math.min(window.innerWidth - 20, 960);
+  const gut = window.__decoGutter || 0;              // 两侧装饰栏占用的宽度
+  const availW = Math.min(window.innerWidth - 20 - 2 * gut, 960);
   const headerH = document.querySelector("header").offsetHeight;
   const availH = window.innerHeight - headerH - 110;
   const cw = Math.floor((availW - (COLS - 1) * GAP) / COLS) - 12;

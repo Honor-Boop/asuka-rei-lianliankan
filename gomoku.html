@@ -330,7 +330,8 @@ function renderCell(i) {
 
 function layout() {
   const headerH = document.querySelector("header").offsetHeight;
-  const avail = Math.min(window.innerHeight - headerH - 150, window.innerWidth - 60, 860);
+  const gut = window.__decoGutter || 0;              // 两侧装饰栏占用的宽度
+  const avail = Math.min(window.innerHeight - headerH - 150, window.innerWidth - 60 - 2 * gut, 860);
   cell = Math.max(30, Math.min(84, Math.floor((avail - 16 - 8 * 4) / 9)));
   document.documentElement.style.setProperty("--cell", cell + "px");
 }

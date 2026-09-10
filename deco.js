@@ -12,6 +12,9 @@
       display:none;flex-direction:column;justify-content:space-between;align-items:center;
       padding:16px 12px;font-family:Consolas,'Courier New',monospace;color:#b9b0d6;opacity:1}
     body.deco-on .deco-rail{display:flex}
+    /* 装饰栏出现时给正文让位：左右各留出栏宽，避免棋盘/按钮压在两侧装饰上。
+       页面里按视口算像素尺寸的地方（mine/gomoku/sudoku/index）改用 window.__decoGutter 扣减。 */
+    body.deco-on{padding-left:var(--deco-gutter,260px);padding-right:var(--deco-gutter,260px)}
     .deco-rail.left{left:0;border-right:1px dashed rgba(255,255,255,.07)}
     .deco-rail.right{right:0;border-left:1px dashed rgba(255,255,255,.07)}
     .deco-rail::after{content:"";position:absolute;inset:0;pointer-events:none;
@@ -344,8 +347,16 @@
 
   // 宽屏才显示
   const mq = window.matchMedia("(min-width:" + MIN_W + "px)");
+  // 页面用这个值扣掉两侧装饰栏占用的宽度（0 = 没有装饰栏）
+  window.__decoGutter = 0;
+  const GUTTER = 260;
   const apply = () => {
-    document.body.classList.toggle("deco-on", mq.matches);
+    const on = mq.matches;
+    document.body.classList.toggle("deco-on", on);
+    document.documentElement.style.setProperty("--deco-gutter", (on ? GUTTER : 0) + "px");
+    const changed = window.__decoGutter !== (on ? GUTTER : 0);
+    window.__decoGutter = on ? GUTTER : 0;
+    if (changed) window.dispatchEvent(new CustomEvent("decochange", { detail: { gutter: window.__decoGutter } }));
     // reload 按钮：宽屏走 rail 内组件，窄屏走悬浮回退（CSS media 控制）
   };
   if (mq.addEventListener) mq.addEventListener("change", apply); else mq.addListener(apply);

@@ -61,7 +61,9 @@
   .controls .sep { width: 1px; background: var(--panel-border); margin: 0 2px; }
 
   /* ---------- 棋盘 ---------- */
-  #boardWrap { position: relative; margin-top: 4px; }
+  /* max-width+overflow：99×99 这类超大棋盘格子有最小尺寸，宽度可能超过可用空间，
+     限制在容器内横向滚动，避免压到两侧装饰栏 */
+  #boardWrap { position: relative; margin-top: 4px; max-width: 100%; overflow-x: auto; }
   #grid {
     display: grid;
     gap: 3px;
@@ -301,7 +303,8 @@ function layout() {
   const gap = cols > 60 ? 1 : cols > 30 ? 2 : 3;
   document.documentElement.style.setProperty("--gap", gap + "px");
   gridEl.style.gap = gap + "px";
-  const availW = Math.min(window.innerWidth - 30, 1900);
+  const gut = window.__decoGutter || 0;              // 两侧装饰栏占用的宽度
+  const availW = Math.min(window.innerWidth - 30 - 2 * gut, 1900);
   const cs = Math.max(12, Math.min(40, Math.floor((availW - 12 - (cols - 1) * gap) / cols)));
   cell = cs;
   document.documentElement.style.setProperty("--cs", cell + "px");
