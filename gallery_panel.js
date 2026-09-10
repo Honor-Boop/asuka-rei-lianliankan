@@ -114,28 +114,58 @@
     </div>`;
   document.body.appendChild(light);
 
-  /* ---------- 入口按钮 ---------- */
-  function injectButton() {
-    const bar = document.querySelector(".controls") || $("bar");
-    const btn = document.createElement("button");
-    btn.id = "galleryBtn";
-    btn.type = "button";
-    btn.title = "查看壁纸图库（不离开当前游戏）";
-    btn.textContent = "🖼 图库";
-    btn.addEventListener("click", () => { if (window.ensureAudio) try { window.ensureAudio(); } catch (e) {} open(); });
-    if (bar) {
-      bar.appendChild(btn);
-    } else {
-      // 无控制区：右下角浮钮（避开版本角标）
-      btn.style.cssText = "position:fixed;right:14px;bottom:70px;z-index:7;font-family:inherit;" +
-        "font-size:12px;color:#fff;cursor:pointer;background:rgba(18,16,43,.72);" +
-        "border:1px solid rgba(255,255,255,.24);border-radius:9px;padding:5px 11px;" +
-        "backdrop-filter:blur(6px)";
-      document.body.appendChild(btn);
+  /* ---------- 入口：页面底部的图库入口（与连连看页脚同格式） ---------- */
+  const LEGEND_HTML =
+    '<div class="gp-legend">' +
+    '<img src="images/asuka_4.jpg" alt="明日香"> 明日香' +
+    '&nbsp;×&nbsp;' +
+    '<img src="images/rei_3.jpg" alt="绫波丽"> 绫波丽' +
+    '&nbsp;·&nbsp;' +
+    '<a href="gallery.html" class="gp-glink" title="查看壁纸图库（不离开当前游戏）">🖼 壁纸图库</a>' +
+    '</div>';
+
+  const legendStyle = document.createElement("style");
+  legendStyle.textContent = `
+    .gp-legend{font-size:12px;color:#c9c2ea;text-align:center;line-height:1.8}
+    .gp-legend img{width:22px;height:22px;border-radius:5px;object-fit:cover;
+      vertical-align:-6px;margin:0 2px}
+    .gp-legend a.gp-glink{color:#9a92b8;cursor:pointer;text-decoration:none}
+    .gp-legend a.gp-glink:hover{color:#ffe066;text-decoration:underline}
+    /* 全屏观景页：没有正文页脚，把入口做成底部条（位于控制条上方） */
+    #gpBottomStrip{position:fixed;left:50%;transform:translateX(-50%);bottom:72px;z-index:6;
+      background:rgba(18,16,43,.5);border:1px solid rgba(255,255,255,.14);border-radius:10px;
+      padding:3px 12px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  `;
+  document.head.appendChild(legendStyle);
+
+  function injectFooterEntry() {
+    const bar = $("bar");                       // 观景页：底部控制条
+    if (bar && !document.querySelector("footer")) {
+      const strip = document.createElement("div");
+      strip.id = "gpBottomStrip";
+      strip.innerHTML = LEGEND_HTML;
+      document.body.appendChild(strip);
+      return;
     }
-    return btn;
+    let footer = document.querySelector("footer");
+    if (!footer) {                              // 无页脚的页面：补一个（与连连看同结构）
+      footer = document.createElement("footer");
+      footer.style.cssText = "margin-top:14px;font-size:12px;color:#c9c2ea;text-align:center;line-height:1.8";
+      document.body.appendChild(footer);
+    }
+    if (footer.querySelector('a[href="gallery.html"]')) return;   // 连连看页脚已有该链接
+    footer.insertAdjacentHTML("afterbegin", LEGEND_HTML);
   }
-  injectButton();
+  injectFooterEntry();
+
+  /* 底部图库链接：就地打开面板（Ctrl/Cmd/中键仍走原链接进管理页） */
+  document.addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest('a[href="gallery.html"]');
+    if (!a) return;
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+    e.preventDefault();
+    open();
+  });
 
   /* ---------- 状态 ---------- */
   let filter = "all";     // all | rei | asuka | misato
