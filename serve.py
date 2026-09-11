@@ -57,12 +57,30 @@ VERSION = "v1.3.0"   # 与 GitHub Release tag 同步
 GITHUB_API = "https://api.github.com/repos/Honor-Boop/asuka-rei-lianliankan/releases/latest"
 
 
+def _github_token():
+    """取本机 git 凭据里的 GitHub token（若有）：认证请求限额 5000/时，
+    避免匿名 60/时 被限流导致更新检查失败。玩家机器没有凭据时返回 None，走匿名。"""
+    try:
+        out = subprocess.run(["git", "credential", "fill"],
+                             input="protocol=https\nhost=github.com\n\n",
+                             capture_output=True, text=True, timeout=8)
+        for line in out.stdout.splitlines():
+            if line.startswith("password="):
+                return line.split("=", 1)[1].strip()
+    except Exception:
+        pass
+    return None
+
+
 def check_update():
     """查询 GitHub 最新 Release，返回是否有新版、下载地址与更新说明。"""
     try:
-        req = urllib.request.Request(GITHUB_API, headers={
-            "User-Agent": "eva-minigames-updater", "Accept": "application/vnd.github+json"})
-        with urllib.request.urlopen(req, timeout=6) as r:
+        headers = {"User-Agent": "eva-minigames-updater", "Accept": "application/vnd.github+json"}
+        token = _github_token()
+        if token:
+            headers["Authorization"] = "token " + token
+        req = urllib.request.Request(GITHUB_API, headers=headers)
+        with urllib.request.urlopen(req, timeout=8) as r:
             d = json.loads(r.read().decode("utf-8"))
         tag = d.get("tag_name") or ""
         url = None
@@ -77,6 +95,10 @@ def check_update():
         return {"ok": True, "latest": tag, "current": VERSION,
                 "update": tag != VERSION and tag != "", "url": url,
                 "notes": body[:3000]}
+    except urllib.error.HTTPError as e:
+        # 403 rate limit 等情况下返回可读错误（前端显示「检查失败」）
+        reason = "rate_limited" if e.code == 403 else ("http_%d" % e.code)
+        return {"ok": False, "error": reason}
     except Exception as e:
         return {"ok": False, "error": type(e).__name__}
 
