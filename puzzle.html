@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>拼图 · 壁纸碎片复原</title>
+<style>
+  :root {
+    --bg1: #2c2256; --bg2: #1b1544;
+    --panel: rgba(255,255,255,.11); --panel-border: rgba(255,255,255,.24);
+    --rei: #74c4ff; --asuka: #ff8055; --gold: #ffe066;
+    --eva-green: #70ffb8; --eva-red: #ff5a3c; --text: #fff; --text-dim: #c9c2ea;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(88,182,255,.16), transparent 60%),
+      radial-gradient(1000px 700px at 12% 110%, rgba(255,106,61,.15), transparent 60%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 8px 18px;
+    user-select: none; -webkit-user-select: none;
+  }
+  header {
+    width: 100%; max-width: 1080px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 4px 6px 10px;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .logo {
+    font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--rei), #b48cff 55%, var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.05;
+  }
+  .subtitle { font-size: 11px; color: var(--text-dim); letter-spacing: 3px; margin-top: 2px; }
+  .stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 4px 12px; text-align: center; min-width: 62px;
+  }
+  .stat .label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+  .stat b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  #timeStat b { color: var(--gold); }
+  #moveStat b { color: var(--eva-green); }
+  #bestStat b { color: var(--rei); }
+  .controls { display: flex; gap: 7px; width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .controls button {
+    font-family: inherit; font-size: 12.5px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 9px; padding: 6px 12px; cursor: pointer; transition: all .15s;
+  }
+  .controls button:hover { background: rgba(255,255,255,.18); }
+  .controls button.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(255,224,102,.25); }
+  .controls button:disabled { opacity: .4; cursor: not-allowed; }
+  .controls .sep { width: 1px; background: var(--panel-border); margin: 0 2px; }
+
+  /* ---------- 棋盘 ---------- */
+  #boardWrap { position: relative; margin-top: 4px; max-width: 100%; display: flex; flex-direction: column; align-items: center; }
+  #board {
+    position: relative; display: grid; gap: 3px; padding: 6px;
+    background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.28);
+    border-radius: 12px; box-shadow: 0 8px 34px rgba(0,0,0,.4), inset 0 0 40px rgba(116,196,255,.05);
+  }
+  .tile {
+    position: relative; border-radius: 6px; cursor: grab; overflow: hidden;
+    background-repeat: no-repeat; background-color: #2a2350;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+    transition: box-shadow .12s, transform .06s;
+  }
+  .tile:hover { box-shadow: inset 0 0 0 2px rgba(116,196,255,.6); }
+  .tile:active { cursor: grabbing; }
+  .tile.sel {
+    box-shadow: inset 0 0 0 3px var(--gold), 0 0 16px rgba(255,224,102,.6);
+    z-index: 3; transform: scale(.97);
+  }
+  .tile.right { box-shadow: inset 0 0 0 2px rgba(112,255,184,.8); }
+  .tile.hinted { animation: hintPop .6s ease-out; }
+  @keyframes hintPop { 0% { box-shadow: inset 0 0 0 4px rgba(112,255,184,.95); } 100% { box-shadow: none; } }
+  .tile.dragging { opacity: .4; }
+  .tile .no { position: absolute; left: 3px; top: 2px; font-size: 11px; color: rgba(255,255,255,.75);
+               text-shadow: 0 1px 3px rgba(0,0,0,.8); pointer-events: none; }
+
+  #caption { margin-top: 8px; font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+  #turnBar { margin-top: 4px; min-height: 20px; font-size: 12.5px; color: var(--text-dim); text-align: center; }
+  #turnBar b { color: var(--gold); }
+
+  /* 预览浮层：按住看原图 */
+  #preview {
+    position: fixed; inset: 0; z-index: 46; display: none; align-items: center; justify-content: center;
+    background: rgba(6,4,14,.88); flex-direction: column; gap: 12px;
+  }
+  #preview.show { display: flex; }
+  #preview img { max-width: min(88vw, 760px); max-height: 76vh; border-radius: 12px;
+                 box-shadow: 0 18px 60px rgba(0,0,0,.7); }
+  #preview .tip { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; }
+
+  /* 过关横幅 */
+  #alarm { position: fixed; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center; pointer-events: none; }
+  #alarm.go { display: flex; }
+  #alarm .banner {
+    font-size: clamp(28px, 5.4vw, 58px); font-weight: 900; font-style: italic; letter-spacing: 8px;
+    color: var(--eva-green); text-shadow: 0 0 26px rgba(112,255,184,.9), 0 0 60px rgba(112,255,184,.45);
+    animation: alarmPulse 1s ease-in-out infinite;
+  }
+  @keyframes alarmPulse { 50% { opacity: .55; transform: scale(1.04); } }
+  #alarm .sub { position: absolute; bottom: 16vh; left: 0; right: 0; text-align: center;
+                font-size: 14px; letter-spacing: 4px; color: #fff; }
+
+  /* 结算 */
+  #overlay { position: fixed; inset: 0; z-index: 40; display: none; align-items: flex-end;
+             justify-content: center; background: rgba(8,5,18,.12); padding-bottom: 7vh; }
+  #overlay.show { display: flex; }
+  .end-card {
+    text-align: center; max-width: 820px; width: calc(100vw - 40px);
+    background: linear-gradient(160deg, rgba(27,21,68,.55), rgba(20,14,36,.5));
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,.28);
+    border-radius: 16px; padding: 12px 22px 14px; box-shadow: 0 6px 30px rgba(0,0,0,.35);
+  }
+  .end-card h2 { font-size: 19px; margin-bottom: 2px; font-style: italic; letter-spacing: 2px; }
+  .end-card h2.win { background: linear-gradient(90deg, var(--rei), var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .end-card p { color: var(--text-dim); font-size: 12.5px; margin: 1.5px 0; }
+  .end-card p b { color: var(--gold); }
+  .end-card .btns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+  .end-card button { font-family: inherit; font-size: 13px; font-weight: 700; color: #14101f;
+    background: linear-gradient(90deg, var(--rei), var(--asuka)); border: none;
+    border-radius: 9px; padding: 7px 18px; cursor: pointer; }
+  .end-card button.ghost { background: var(--panel); color: var(--text);
+    border: 1px solid var(--panel-border); font-weight: 400; }
+
+  #toast { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px);
+    background: rgba(34,25,66,.95); border: 1px solid var(--panel-border); color: var(--text);
+    padding: 8px 16px; border-radius: 9px; font-size: 13px; opacity: 0; transition: all .25s;
+    z-index: 60; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  #helpModal { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center;
+    background: rgba(8,5,18,.6); backdrop-filter: blur(4px); }
+  #helpModal.show { display: flex; }
+  #helpModal .box { max-width: 560px; width: calc(100vw - 50px); max-height: 84vh; overflow: auto;
+    background: rgba(34,25,66,.95); border: 1px solid rgba(255,224,102,.4); border-radius: 14px;
+    padding: 20px 26px; color: #fff; line-height: 1.8; font-size: 13.5px; }
+  #helpModal h3 { font-size: 17px; letter-spacing: 2px; color: var(--gold); font-style: italic; margin-bottom: 8px; }
+  #helpModal .rule b { color: var(--gold); }
+  #helpModal .close { margin-top: 14px; float: right; font-family: inherit; font-size: 13px; font-weight: 700;
+    color: #14101f; border: none; border-radius: 9px; padding: 8px 22px; cursor: pointer;
+    background: linear-gradient(90deg, var(--rei), var(--asuka)); }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="46" height="50" viewBox="0 0 104 64" aria-hidden="true" style="flex:none;filter:drop-shadow(0 0 6px rgba(232,51,42,.5))">
+    <path d="M8 60 A 44 44 0 0 1 96 60 Z" fill="#c8102e" stroke="#7d0a1d" stroke-width="3"/>
+    <path d="M52 60 V 20 M52 36 C 41 32 33 24 31 13 M52 36 C 63 32 71 24 73 13
+             M52 47 C 39 45 27 37 23 27 M52 47 C 65 45 77 37 81 27"
+          stroke="#ffd9dd" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="brand">
+    <div class="logo">拼图 · PUZZLE</div>
+    <div class="subtitle">明日香 × 绫波丽 · 壁纸碎片复原</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="label">难度</div><b id="diffTag">正規隊員</b></div>
+    <div class="stat" id="timeStat"><div class="label">用时</div><b>000</b></div>
+    <div class="stat" id="moveStat"><div class="label">步数</div><b>0</b></div>
+    <div class="stat" id="bestStat"><div class="label">最佳</div><b id="bestVal">--</b></div>
+  </div>
+  <div class="controls">
+    <button data-d="easy">見習い 3×3</button>
+    <button data-d="normal">正規隊員 4×4</button>
+    <button data-d="hard">使徒級 5×5</button>
+    <span class="sep"></span>
+    <button id="prevImgBtn" title="上一张壁纸">◀ 换图</button>
+    <button id="nextImgBtn" title="下一张壁纸">换图 ▶</button>
+    <button id="revealBtn" title="按住看原图（也可按 P）">👁 预览</button>
+    <button id="hintBtn" title="提示：直接归位一块（按 H）">💡 提示 ×<span id="hintLeft">3</span></button>
+    <button id="undoBtn" title="撤销（Ctrl+Z）">↩ 撤销</button>
+    <span class="sep"></span>
+    <button id="newBtn">♻ 重开</button>
+    <button id="helpBtn">❓ 玩法</button>
+    <button id="modeBtn">🎮 玩法选择</button>
+  </div>
+</header>
+
+<div id="boardWrap">
+  <div id="board"></div>
+  <div id="caption"></div>
+  <div id="turnBar"></div>
+
+  <div id="overlay">
+    <div class="end-card">
+      <h2 id="endTitle">补 完 完 成 ！</h2>
+      <p id="endStats">用时 --</p>
+      <p id="endNote"></p>
+      <div class="btns">
+        <button id="againBtn">再 来 一 局</button>
+        <button id="modeBtn2" class="ghost">返回玩法选择</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="preview"><img id="previewImg" alt=""><div class="tip">松手 / 松开按键即返回</div></div>
+<div id="alarm"></div>
+<div id="toast"></div>
+
+<div id="helpModal">
+  <div class="box">
+    <h3>拼图 · 玩法说明</h3>
+    <div class="rule"><b>目标</b>：把打乱的壁纸碎片复原成完整图像。</div>
+    <div class="rule"><b>操作</b>：点一块，再点另一块 → 两块<b>交换位置</b>；也可以直接拖动一块到另一块上交换。</div>
+    <div class="rule"><b>难度</b>：見習い 3×3 · 正規隊員 4×4 · 使徒級 5×5；记录按步数 + 用时保存在本机。</div>
+    <div class="rule"><b>辅助</b>：👁 预览按住看原图（快捷键 P）；💡 提示直接归位一块（次数有限，快捷键 H）；↩ 撤销可回退上一步交换。</div>
+    <div class="rule"><b>换图</b>：◀ ▶ 在壁纸库里换一张；分辨率越高的壁纸碎片越清晰（1–5 星）。</div>
+    <div class="rule"><b>小技巧</b>：先把四角定位，再拼边、最后补中间；「显示正确」的绿框表示那块已经在正确位置。</div>
+    <button class="close">知道了</button>
+  </div>
+</div>
+
+<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\/script>');</script>
+<script src="background.js"></script>
+<script src="deco.js"></script>
+<script src="gallery_panel.js"></script>
+
+<script>
+"use strict";
+/* ============ 配置 ============ */
+const DIFFS = {
+  easy:   { name: "見習い訓練", n: 3, hints: 5 },
+  normal: { name: "正規隊員",   n: 4, hints: 3 },
+  hard:   { name: "使徒級",     n: 5, hints: 1 },
+};
+const FALLBACK = ["images/rei_1.jpg", "images/asuka_5.jpg", "images/rei_3.jpg", "images/asuka_4.jpg"];
+const SRC_PX = 1080;          // 裁成正方形后的素材边长（够 5×5 用）
+
+/* ============ 状态 ============ */
+let diffKey = "normal";
+let cfg = DIFFS[diffKey];
+let N = cfg.n;
+let board = [];               // board[pos] = tileId（tileId 即正确位置下标）
+let sel = null;
+let moves = 0, seconds = 0, timerId = null;
+let started = false, over = false, shuffling = false;
+let hintsLeft = cfg.hints;
+let history = [];
+let imgList = [], imgIdx = 0, imgSrc = "", imgLabel = "", squareURL = "";
+let audioCtx = null;
+let cellPx = 90;
+
+const $ = id => document.getElementById(id);
+const boardEl = $("board");
+
+/* ============ 音效 ============ */
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(f, d, t = "sine", g = .1, delay = 0) {
+  if (!audioCtx) return;
+  const s = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator(), v = audioCtx.createGain();
+  o.type = t; o.frequency.value = f;
+  v.gain.setValueAtTime(g, s);
+  v.gain.exponentialRampToValueAtTime(.0001, s + d);
+  o.connect(v); v.connect(audioCtx.destination);
+  o.start(s); o.stop(s + d + .02);
+}
+const sndSwap = () => beep(560, .05, "triangle", .07);
+const sndPick = () => beep(760, .03, "sine", .05);
+const sndRight = () => beep(980, .07, "sine", .07);
+const sndHint = () => { beep(880, .08, "sine", .09); beep(1175, .1, "sine", .08, .07); };
+const sndWin = () => [523, 659, 784, 1047].forEach((f, i) => beep(f, .16, "sine", .13, i * .12));
+
+/* ============ 素材列表：实时拉取图库（含新上传的图片） ============ */
+function buildImageList() {
+  const list = (window.WALLPAPER_LIST || []).filter(w => w && w.src);
+  imgList = list.length ? list : FALLBACK.map(s => ({ src: s, char: "", res: "" }));
+}
+/* /api/list 由 serve.py 每次实时扫描图库目录生成：
+   上传/删除后立刻可见，因此新加进图库的图马上就能被拼图抽到 */
+async function refreshImageList() {
+  try {
+    const r = await fetch("api/list", { cache: "no-store" });
+    const d = await r.json();
+    const list = (Array.isArray(d) ? d : (d && d.items) || []).filter(w => w && w.src);
+    if (list.length) { imgList = list; return true; }
+  } catch (e) { /* 离线：退回页面加载时的清单 */ }
+  if (!imgList.length) buildImageList();
+  return false;
+}
+function labelOf(item) {
+  const who = { rei: "绫波丽", asuka: "明日香", misato: "美里" }[item.char] || "壁纸";
+  return who + (item.res ? " · " + item.res : "");
+}
+function pickRandomItem(excludeSrc) {
+  if (!imgList.length) return null;
+  const pool = imgList.filter(w => w.src !== excludeSrc);
+  const arr = pool.length ? pool : imgList;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = rej;
+    im.src = src;
+  });
+}
+async function makeSquare(src) {
+  const im = await loadImage(src);
+  const side = Math.min(im.naturalWidth, im.naturalHeight);
+  const sx = Math.floor((im.naturalWidth - side) / 2);
+  const sy = Math.floor((im.naturalHeight - side) / 2);
+  const cv = document.createElement("canvas");
+  cv.width = cv.height = SRC_PX;
+  const cx = cv.getContext("2d");
+  cx.drawImage(im, sx, sy, side, side, 0, 0, SRC_PX, SRC_PX);
+  return { url: cv.toDataURL("image/jpeg", 0.92), w: im.naturalWidth, h: im.naturalHeight };
+}
+
+/* ============ 新局 ============ */
+async function newGame(d, keepImage) {
+  if (d) { diffKey = d; cfg = DIFFS[d]; N = cfg.n; }
+  over = false; started = false; sel = null;
+  moves = 0; seconds = 0; hintsLeft = cfg.hints; history = [];
+  stopTimer();
+  $("timeStat").querySelector("b").textContent = "000";
+  $("moveStat").querySelector("b").textContent = "0";
+  $("hintLeft").textContent = hintsLeft;
+  $("diffTag").textContent = cfg.name;
+  $("overlay").classList.remove("show");
+  $("alarm").classList.remove("go");
+  document.querySelectorAll(".controls [data-d]").forEach(b => b.classList.toggle("active", b.dataset.d === diffKey));
+  loadBest();
+  updateButtons();
+
+  await refreshImageList();                     // 每次开新局都拉取最新图库
+  let item = null;
+  if (keepImage && imgSrc) item = imgList.find(w => w.src === imgSrc) || null;
+  if (!item) item = pickRandomItem(imgSrc);
+  shuffling = true;
+  $("board").style.opacity = ".35";
+  $("turnBar").textContent = "正在准备图片……";
+  try {
+    imgSrc = item.src; imgLabel = labelOf(item);
+    const sq = await makeSquare(item.src);
+    squareURL = sq.url;
+    $("previewImg").src = imgSrc;               // 预览展示原图（所见即所得）
+    $("caption").textContent = "素材：" + imgLabel;
+  } catch (e) {
+    toast("图片加载失败，换一张试试");
+    squareURL = ""; imgSrc = ""; 
+  }
+  shuffling = false;
+  $("board").style.opacity = "1";
+  shuffle();
+  layout(); render(); statusLine();
+}
+function shuffle() {
+  const total = N * N;
+  board = [...Array(total).keys()];
+  // Fisher-Yates；确保至少 2N 块错位（观感上确实是打乱的）
+  for (let tries = 0; tries < 50; tries++) {
+    for (let i = board.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [board[i], board[j]] = [board[j], board[i]];
+    }
+    let wrong = 0;
+    for (let i = 0; i < total; i++) if (board[i] !== i) wrong++;
+    if (wrong >= Math.max(2 * N, Math.floor(total * 0.6))) break;
+  }
+}
+
+/* ============ 布局 / 渲染 ============ */
+function layout() {
+  const gut = (window.__decoGutter || 0) * 2;
+  const availW = Math.min(window.innerWidth - 60 - gut, 640);
+  const availH = window.innerHeight - 330;
+  const side = Math.max(220, Math.min(availW, availH));
+  const gap = N >= 5 ? 2 : 3;
+  cellPx = Math.max(36, Math.floor((side - gap * (N + 1)) / N));
+  const total = cellPx * N + gap * (N + 1);
+  boardEl.style.gridTemplateColumns = `repeat(${N}, ${cellPx}px)`;
+  boardEl.style.gap = gap + "px";
+  boardEl.style.padding = gap + "px";
+  boardEl.style.width = total + "px";
+  boardEl.style.height = total + "px";
+}
+function tileStyle(el, tileId) {
+  const row = Math.floor(tileId / N), col = tileId % N;
+  el.style.backgroundImage = squareURL ? `url("${squareURL}")` : "none";
+  el.style.backgroundSize = `${N * cellPx}px ${N * cellPx}px`;
+  el.style.backgroundPosition = `${-col * cellPx}px ${-row * cellPx}px`;
+}
+function render() {
+  boardEl.innerHTML = "";
+  for (let pos = 0; pos < N * N; pos++) {
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.dataset.pos = pos;
+    tileStyle(el, board[pos]);
+    if (board[pos] === pos) el.classList.add("right");
+    if (sel === pos) el.classList.add("sel");
+    el.draggable = true;
+    el.addEventListener("click", () => onClick(pos));
+    el.addEventListener("dragstart", e => {
+      ensureAudio();
+      sel = pos;
+      e.dataTransfer.setData("text/plain", String(pos));
+      e.dataTransfer.effectAllowed = "move";
+      el.classList.add("dragging");
+      render();
+    });
+    el.addEventListener("dragend", () => { el.classList.remove("dragging"); });
+    el.addEventListener("dragover", e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; });
+    el.addEventListener("drop", e => {
+      e.preventDefault();
+      const from = Number(e.dataTransfer.getData("text/plain"));
+      if (!Number.isNaN(from) && from !== pos) swap(from, pos);
+      sel = null; render(); statusLine();
+    });
+    boardEl.appendChild(el);
+  }
+}
+function updateButtons() {
+  $("undoBtn").disabled = history.length === 0;
+  $("hintBtn").disabled = hintsLeft <= 0 || over;
+}
+
+/* ============ 操作 ============ */
+function snapshot() {
+  history.push({ board: board.slice(), moves, hintsLeft });
+  if (history.length > 300) history.shift();
+}
+function undo() {
+  if (over || !history.length) return;
+  const h = history.pop();
+  board = h.board; moves = h.moves; hintsLeft = h.hintsLeft;
+  sel = null;
+  $("moveStat").querySelector("b").textContent = moves;
+  $("hintLeft").textContent = hintsLeft;
+  render(); updateButtons(); statusLine();
+  toast("已撤销上一步交换");
+}
+function onClick(pos) {
+  ensureAudio();
+  if (over || shuffling) return;
+  if (sel === null) { sel = pos; sndPick(); render(); return; }
+  if (sel === pos) { sel = null; render(); return; }
+  swap(sel, pos);
+}
+function swap(a, b) {
+  if (a === b) return;
+  if (!started) { started = true; startTimer(); }
+  snapshot();
+  [board[a], board[b]] = [board[b], board[a]];
+  moves++;
+  sel = null;
+  const nowRight = board[a] === a || board[b] === b;
+  if (nowRight) sndRight(); else sndSwap();
+  $("moveStat").querySelector("b").textContent = moves;
+  render(); updateButtons(); statusLine();
+  checkWin();
+}
+function hint() {
+  ensureAudio();
+  if (over || shuffling || hintsLeft <= 0) return;
+  const wrong = [];
+  for (let i = 0; i < N * N; i++) if (board[i] !== i) wrong.push(i);
+  if (!wrong.length) return;
+  if (!started) { started = true; startTimer(); }
+  snapshot();
+  const pos = wrong[Math.floor(Math.random() * wrong.length)];
+  const tileId = pos;                     // 该位置应放的碎片
+  const from = board.indexOf(tileId);
+  [board[pos], board[from]] = [board[from], board[pos]];
+  moves++; hintsLeft--;
+  sel = null;
+  sndHint();
+  $("moveStat").querySelector("b").textContent = moves;
+  $("hintLeft").textContent = hintsLeft;
+  render(); updateButtons(); statusLine();
+  const el = boardEl.children[pos];
+  if (el) { el.classList.add("hinted"); setTimeout(() => el.classList.remove("hinted"), 620); }
+  toast("提示：已归位一块" + (hintsLeft ? "（剩 " + hintsLeft + " 次）" : "（已用完）"));
+  checkWin();
+}
+function checkWin() {
+  for (let i = 0; i < N * N; i++) if (board[i] !== i) return;
+  win();
+}
+function win() {
+  over = true; stopTimer();
+  sndWin();
+  const alarm = $("alarm");
+  alarm.innerHTML = `<div class="banner">PATTERN : COMPLETE</div>
+    <div class="sub">碎片全部歸位 · 綾波レイ &amp; 惣流·アスカ 同步率 100%</div>`;
+  alarm.classList.add("go");
+  setTimeout(() => alarm.classList.remove("go"), 2400);
+
+  const key = bestKey();
+  const prev = JSON.parse(localStorage.getItem(key) || "null");
+  let note = "";
+  if (!prev || moves < prev.moves || (moves === prev.moves && seconds < prev.seconds)) {
+    localStorage.setItem(key, JSON.stringify({ moves, seconds }));
+    note = "🎉 新纪录！";
+  } else {
+    note = "最佳 " + prev.moves + " 步 / " + fmtTime(prev.seconds);
+  }
+  loadBest();
+  showEnd(note);
+}
+function bestKey() { return "eva_puzzle_best_" + diffKey + "_" + N; }
+function loadBest() {
+  const v = JSON.parse(localStorage.getItem(bestKey()) || "null");
+  $("bestVal").textContent = v ? (v.moves + "步/" + fmtTime(v.seconds)) : "--";
+}
+function showEnd(note) {
+  const h2 = $("endTitle");
+  h2.className = "win";
+  h2.textContent = "补 完 完 成 ！";
+  $("endStats").innerHTML = `用时 <b>${fmtTime(seconds)}</b> · 步数 <b>${moves}</b> · 提示用 <b>${cfg.hints - hintsLeft}</b> · ${N}×${N}`;
+  $("endNote").textContent = (moves <= N * N * 2
+    ? "碎片归位得干净利落——这就是同步率 100% 的感觉。"
+    : "画面补完了。绫波丽看了一眼，什么也没说，但你知道她满意。");
+  if (note) $("endNote").textContent += "　" + note;
+  $("overlay").classList.add("show");
+}
+
+/* ============ 预览 / 计时 / 提示条 ============ */
+function showPreview(on) {
+  if (on && !imgSrc) return;
+  $("preview").classList.toggle("show", on);
+}
+function fmtTime(s) { return String(s).padStart(3, "0") + "s"; }
+function startTimer() {
+  stopTimer();
+  timerId = setInterval(() => {
+    seconds++;
+    $("timeStat").querySelector("b").textContent = String(seconds).padStart(3, "0");
+  }, 1000);
+}
+function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+function statusLine() {
+  if (over) { $("turnBar").innerHTML = ""; return; }
+  let right = 0;
+  for (let i = 0; i < N * N; i++) if (board[i] === i) right++;
+  $("turnBar").innerHTML = `已归位 <b>${right}</b> / ${N * N} 块 · 点两块交换（或拖动一块到另一块上）· 绿框=位置正确`;
+}
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove("show"), 2200);
+}
+async function cycleImage(step) {
+  await refreshImageList();                     // 换图前刷新，新上传的图立即纳入轮换
+  if (!imgList.length) return;
+  const cur = imgList.findIndex(w => w.src === imgSrc);
+  const next = ((cur < 0 ? 0 : cur) + step + imgList.length) % imgList.length;
+  imgSrc = imgList[next].src;
+  await newGame(null, true);
+  toast("换图：" + imgLabel);
+}
+
+/* ============ 事件 ============ */
+document.querySelectorAll(".controls [data-d]").forEach(b =>
+  b.addEventListener("click", () => { ensureAudio(); newGame(b.dataset.d); }));
+$("newBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("prevImgBtn").addEventListener("click", () => { ensureAudio(); cycleImage(-1); });
+$("nextImgBtn").addEventListener("click", () => { ensureAudio(); cycleImage(1); });
+$("hintBtn").addEventListener("click", hint);
+$("undoBtn").addEventListener("click", () => { ensureAudio(); undo(); });
+$("modeBtn").addEventListener("click", () => { location.href = "index.html"; });
+$("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("modeBtn2").addEventListener("click", () => { location.href = "index.html"; });
+$("helpBtn").addEventListener("click", () => $("helpModal").classList.add("show"));
+$("helpModal").addEventListener("click", e => {
+  if (e.target === $("helpModal") || e.target.classList.contains("close")) $("helpModal").classList.remove("show");
+});
+// 预览：按住按钮或按 P 显示，松开恢复
+["mousedown", "touchstart"].forEach(ev =>
+  $("revealBtn").addEventListener(ev, e => { e.preventDefault(); ensureAudio(); showPreview(true); }));
+["mouseup", "mouseleave", "touchend"].forEach(ev =>
+  $("revealBtn").addEventListener(ev, () => showPreview(false)));
+$("preview").addEventListener("click", () => showPreview(false));
+
+window.addEventListener("keydown", e => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+  if (e.key === "p" || e.key === "P") { showPreview(true); return; }
+  if (e.key === "h" || e.key === "H") { hint(); return; }
+  if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) { undo(); e.preventDefault(); return; }
+  if (e.key === "Escape") { $("helpModal").classList.remove("show"); showPreview(false); }
+});
+window.addEventListener("keyup", e => { if (e.key === "p" || e.key === "P") showPreview(false); });
+window.addEventListener("resize", () => { layout(); render(); });
+window.addEventListener("decochange", () => { layout(); render(); });
+document.addEventListener("pointerdown", ensureAudio, { once: true });
+
+/* ============ 自测入口（供自动化验收） ============ */
+window.__puzzleSelfTest = async function () {
+  const out = { sizes: [], swapOk: false, winOk: false, hintOk: false, alwaysSolvable: true };
+  for (const k of Object.keys(DIFFS)) {
+    diffKey = k; cfg = DIFFS[k]; N = cfg.n;
+    squareURL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    shuffle();
+    let wrong = 0, seen = new Set();
+    for (let i = 0; i < N * N; i++) { if (board[i] !== i) wrong++; seen.add(board[i]); }
+    out.sizes.push({ diff: k, n: N, cells: board.length, wrong, permValid: seen.size === N * N });
+    if (seen.size !== N * N) out.alwaysSolvable = false;
+  }
+  // 交换 → 计数/撤销
+  diffKey = "easy"; cfg = DIFFS.easy; N = 3;
+  squareURL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  board = [0,1,2,3,4,5,6,7,8]; history = []; moves = 0; over = false;
+  swap(0, 1);
+  out.swapOk = (board[0] === 1 && board[1] === 0 && moves === 1);
+  undo();
+  out.undoOk = (board[0] === 0 && moves === 0);
+  // 提示归位
+  board = [1,0,2,3,4,5,6,7,8]; hintsLeft = 3; moves = 0; over = false;
+  hint();
+  out.hintOk = (board[0] === 0 && hintsLeft === 2);
+  // 通关判定
+  board = [...Array(9).keys()]; over = false;
+  checkWin();
+  out.winOk = over === true;
+  return out;
+};
+
+/* 图库变动感知：回到页面时刷新；若当前图已被删除则提示并可换图 */
+async function syncGallery() {
+  const before = imgList.length;
+  await refreshImageList();
+  const stillThere = imgList.some(w => w.src === imgSrc);
+  if (!stillThere && imgSrc) toast("当前壁纸已从图库移除，点「换图 ▶」换一张");
+  else if (imgList.length > before) toast("图库新增 " + (imgList.length - before) + " 张，点「换图 ▶」就能拼到");
+}
+
+/* ============ 启动 ============ */
+(async function boot() {
+  buildImageList();
+  await newGame("normal");                      // newGame 内部会实时刷新清单
+  setInterval(syncGallery, 30000);              // 每 30 秒感知图库变化
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncGallery(); });
+})();
+</script>
+</body>
+</html>

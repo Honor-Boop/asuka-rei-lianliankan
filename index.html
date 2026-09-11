@@ -230,6 +230,10 @@
   .mode-opt[data-mode="view"]:hover { border-color: rgba(201,166,255,.6); box-shadow: 0 0 18px rgba(201,166,255,.28); }
   .mode-opt[data-mode="spider"] b { color: var(--eva-green); }
   .mode-opt[data-mode="mine"] b { color: #ffd54a; }
+  .mode-opt[data-mode="puzzle"] b { color: #7dffc4; }
+  .mode-opt[data-mode="puzzle"]:hover { border-color: rgba(125,255,196,.6); box-shadow: 0 0 18px rgba(125,255,196,.25); }
+  .mode-opt[data-mode="klondike"] b { color: #ff9ec4; }
+  .mode-opt[data-mode="klondike"]:hover { border-color: rgba(255,158,196,.6); box-shadow: 0 0 18px rgba(255,158,196,.25); }
   .mode-opt[data-mode="mine"]:hover { border-color: rgba(255,213,74,.6); box-shadow: 0 0 18px rgba(255,213,74,.25); }
   .mode-opt[data-mode="spider"]:hover { border-color: rgba(112,255,184,.6); box-shadow: 0 0 18px rgba(112,255,184,.25); }
   .mode-opt .em-new { color: var(--gold); }
@@ -481,6 +485,16 @@
         <b>数独 · 9×9</b>
         <span>三档难度 · 唯一解盘面<br>候选数 + 提示 + 战绩</span>
         <em>数阵</em>
+      </button>
+      <button class="diff-opt mode-opt" data-mode="puzzle">
+        <b>拼图</b>
+        <span>图库壁纸打乱复原<br>3×3 / 4×4 / 5×5 · 随机选图</span>
+        <em>新玩法</em>
+      </button>
+      <button class="diff-opt mode-opt" data-mode="klondike">
+        <b>接龙</b>
+        <span>双姝扑克经典接龙<br>抽 1 / 抽 3 · 四叠 A→K</span>
+        <em>纸牌</em>
       </button>
     </div>
     <button id="modeCancel" style="display:none;margin-top:18px;font-family:inherit;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:8px 22px;cursor:pointer">返回当前对局</button>
@@ -1385,6 +1399,8 @@ document.querySelectorAll(".mode-opt").forEach(btn => {
     if (btn.dataset.mode === "spider") { location.href = "spider.html"; return; }
     if (btn.dataset.mode === "mine") { location.href = "mine.html"; return; }
     if (btn.dataset.mode === "sudoku") { location.href = "sudoku.html"; return; }
+    if (btn.dataset.mode === "puzzle") { location.href = "puzzle.html"; return; }
+    if (btn.dataset.mode === "klondike") { location.href = "klondike.html"; return; }
     if (diffKey) resumeTimer(); else openDiff(false);
   });
 });
