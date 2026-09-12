@@ -86,13 +86,15 @@
   @keyframes drop { from { transform: translateY(-14px); opacity: .4; } to { transform: none; opacity: 1; } }
   .cell.hintcell { animation: hintPulse .6s ease-in-out infinite alternate; }
   @keyframes hintPulse { from { box-shadow: inset 0 0 0 2px rgba(112,255,184,.55); } to { box-shadow: inset 0 0 0 4px var(--eva-green), 0 0 16px rgba(112,255,184,.7); } }
-  /* 六种宝石（角色主题色系） */
-  .g0 { background: linear-gradient(150deg, #74c4ff, #2f6db1); }   /* 绫波蓝 */
-  .g1 { background: linear-gradient(150deg, #ff9a70, #c34a1f); }   /* 明日香橙 */
-  .g2 { background: linear-gradient(150deg, #b48cff, #5d3b9e); }   /* EVA紫 */
-  .g3 { background: linear-gradient(150deg, #7dffc4, #1f8f63); }   /* 力场绿 */
-  .g4 { background: linear-gradient(150deg, #ffe066, #b8912a); }   /* NERV金 */
-  .g5 { background: linear-gradient(150deg, #ff7f9f, #b12d55); }   /* 桃红 */
+  /* 六种宝石：凌波丽×3（蓝系）+ 明日香×3（橙系），头像圆形图 + 主题色光晕 */
+  .cell img { width: 100%; height: 100%; display: block; pointer-events: none;
+              border-radius: 8px; object-fit: cover; }
+  .g0 { background: #0e2a44; box-shadow: inset 0 0 0 1px rgba(116,196,255,.5), 0 0 8px rgba(116,196,255,.25); }
+  .g1 { background: #4a1607; box-shadow: inset 0 0 0 1px rgba(255,154,112,.5), 0 0 8px rgba(255,154,112,.25); }
+  .g2 { background: #123352; box-shadow: inset 0 0 0 1px rgba(158,220,255,.5), 0 0 8px rgba(158,220,255,.22); }
+  .g3 { background: #54280a; box-shadow: inset 0 0 0 1px rgba(255,190,120,.5), 0 0 8px rgba(255,190,120,.22); }
+  .g4 { background: #0a1f36; box-shadow: inset 0 0 0 1px rgba(90,150,220,.5), 0 0 8px rgba(90,150,220,.22); }
+  .g5 { background: #3d1105; box-shadow: inset 0 0 0 1px rgba(230,110,70,.5), 0 0 8px rgba(230,110,70,.22); }
 
   #turnBar { margin-top: 8px; min-height: 20px; font-size: 12.5px; color: var(--text-dim); text-align: center; max-width: 760px; }
   #turnBar b { color: var(--gold); }
@@ -219,6 +221,7 @@
     <div class="rule"><b>难度</b>：見習い 8×8·120 秒·目标 2000 / 正規隊員 8×8·90 秒·目标 3000 / 使徒級 9×9·90 秒·目标 4000（6 种宝石，更难连锁）。</div>
     <div class="rule"><b>辅助</b>：💡 提示会闪出一组可消除的位置；🔀 重排可把盘面打乱重排（每局有限次数，无路可走时也会自动重排）。</div>
     <div class="rule"><b>小技巧</b>：优先做十字/L 形（一次消 5 块有额外奖励分）；留意消除后的下落连锁——它是高分的关键。</div>
+    <div class="rule"><b>宝石</b>：三枚<b>绫波丽</b>（蓝系）与三枚<b>明日香</b>（橙系）的头像——同角色的不同装扮也算同色，看外环颜色即可分辨。</div>
     <button class="close">知道了</button>
   </div>
 </div>
@@ -405,7 +408,10 @@ function render() {
     const el = document.createElement("div");
     const v = grid[r][c];
     el.className = "cell g" + v;
-    el.textContent = "✦";
+    const im = document.createElement("img");
+    im.src = GEM_IMGS[v] ? GEM_IMGS[v].src : "";
+    im.draggable = false;
+    el.appendChild(im);
     if (sel && sel.r === r && sel.c === c) el.classList.add("sel");
     el.dataset.r = r; el.dataset.c = c;
     el.addEventListener("click", () => onClick(r, c));
@@ -655,8 +661,18 @@ window.__match3SelfTest = function () {
 };
 
 /* ============ 启动 ============ */
-layout();
-newGame("normal");
+const GEM_FILES = ["rei_a", "rei_b", "rei_c", "asuka_a", "asuka_b", "asuka_c"];
+const GEM_IMGS = [];
+(async function preloadGems() {
+  await Promise.all(GEM_FILES.map((n, i) => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { GEM_IMGS[i] = im; res(); };
+    im.onerror = () => res();
+    im.src = "assets/match3/" + n + ".png";
+  })));
+  layout();
+  newGame("normal");
+})();
 </script>
 </body>
 </html>

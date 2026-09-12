@@ -53,7 +53,7 @@ def build_manifest():
     return items
 
 
-VERSION = "v1.4.0"   # 与 GitHub Release tag 同步
+VERSION = "v1.4.1"   # 与 GitHub Release tag 同步
 GITHUB_API = "https://api.github.com/repos/Honor-Boop/asuka-rei-lianliankan/releases/latest"
 
 
