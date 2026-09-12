@@ -31,6 +31,17 @@
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     padding: 4px 6px 10px;
   }
+  /* 玻璃质感：面板半透明 + 背景模糊，透出壁纸 */
+  .glass {
+    background: rgba(28, 22, 62, 0.42) !important;
+    backdrop-filter: blur(9px) saturate(1.25);
+    -webkit-backdrop-filter: blur(9px) saturate(1.25);
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow: 0 6px 26px rgba(0, 0, 0, 0.3);
+  }
+  header.glass { border-radius: 14px; padding: 8px 14px 10px; }
+  #grid.glass, .stat.glass { border-radius: 12px; }
+  .stat.glass { border-radius: 10px !important; }
   .brand { display: flex; flex-direction: column; }
   .logo {
     font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 1px;
@@ -69,7 +80,7 @@
     gap: 3px;
     padding: 6px;
     margin: 0 auto;
-    background: rgba(0, 0, 0, 0.18);
+    background: rgba(20, 16, 46, 0.34);
     border: 1px solid var(--panel-border);
     border-radius: 12px;
   }
@@ -83,6 +94,34 @@
     font-weight: 800; font-size: calc(var(--cs) * .55);
     font-variant-numeric: tabular-nums;
     transition: background .1s, transform .05s;
+    position: relative; overflow: hidden;
+  }
+  /* EVA 元素：盖牌的六边形力场纹 + 对角 UV 条纹（半透明，随格子尺寸缩放） */
+  .cell:not(.open)::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(-45deg,
+        rgba(245, 197, 24, 0.16) 0 6px, transparent 6px 14px);
+    opacity: .55;
+    pointer-events: none;
+  }
+  .cell:not(.open)::after {
+    content: "";
+    position: absolute; right: -18%; bottom: -18%;
+    width: 62%; height: 62%;
+    border: 2px solid rgba(116, 196, 255, 0.30);
+    transform: rotate(45deg);
+    pointer-events: none;
+  }
+  .cell:nth-child(3n):not(.open)::after {
+    border-color: rgba(255, 128, 85, 0.30);   /* 蓝/橙交替：绫波丽×明日香 */
+  }
+  /* 翻开的数字格：极淡的 NERV 绿底纹（放在 .open.zero 之后，避免被简写覆盖） */
+  .cell.open {
+    background-color: rgba(255,255,255,.045);
+    border-color: rgba(255,255,255,.06);
+    cursor: default;
   }
   .cell:hover:not(.open):not(.dead) { background: rgba(255,255,255,.26); }
   .cell:active:not(.open) { transform: scale(.94); }
@@ -91,7 +130,11 @@
     border-color: rgba(255,255,255,.06);
     cursor: default;
   }
-  .cell.open.zero { background: rgba(255,255,255,.02); }
+  .cell.open.zero { background-color: rgba(255,255,255,.02); }
+  .cell.open {
+    background-image: repeating-linear-gradient(135deg,
+      rgba(112, 255, 184, 0.06) 0 3px, transparent 3px 9px);
+  }
   .cell .n1 { color: #6ec9ff; } .cell .n2 { color: #70ffb8; }
   .cell .n3 { color: #ff7057; } .cell .n4 { color: #c9a6ff; }
   .cell .n5 { color: #ffb347; } .cell .n6 { color: #ff9ec4; }
@@ -185,7 +228,7 @@
 </head>
 <body>
 
-<header>
+<header class="glass">
   <svg width="46" height="50" viewBox="0 0 104 64" aria-hidden="true" style="flex:none;filter:drop-shadow(0 0 6px rgba(232,51,42,.5))">
     <path d="M8 60 A 44 44 0 0 1 96 60 Z" fill="#c8102e" stroke="#7d0a1d" stroke-width="3"/>
     <path d="M52 60 V 20 M52 36 C 41 32 33 24 31 13 M52 36 C 63 32 71 24 73 13
@@ -197,9 +240,9 @@
     <div class="subtitle">明日香 × 绫波丽 · 使徒掃海作戦</div>
   </div>
   <div class="stats">
-    <div class="stat" id="minesLeft"><div class="label">☢ 使徒余量</div><b>0</b></div>
-    <div class="stat" id="timeStat"><div class="label">时间</div><b>000</b></div>
-    <div class="stat"><div class="label">最佳</div><b id="bestVal">--</b></div>
+    <div class="stat glass" id="minesLeft"><div class="label">☢ 使徒余量</div><b>0</b></div>
+    <div class="stat glass" id="timeStat"><div class="label">时间</div><b>000</b></div>
+    <div class="stat glass"><div class="label">最佳</div><b id="bestVal">--</b></div>
   </div>
   <div class="controls">
     <button data-d="easy">見習い 9×9</button>
@@ -212,7 +255,7 @@
 </header>
 
 <div id="boardWrap">
-  <div id="grid"></div>
+  <div id="grid" class="glass"></div>
   <div id="turnBar">左键翻开 · 右键标记 NERV 旗 · 在数字上双击/滚轮快速展开周围</div>
   <div id="overlay">
     <div class="end-card">
