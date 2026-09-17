@@ -1,0 +1,37 @@
+# 会话快照（SESSION NOTES）
+
+本文件按 `context-compression` 技能追加会话快照：只记录「继续执行所必需」的信息（目标、已确认决定、当前状态、待办、关键位置），过程性叙述一律省略。
+
+---
+
+## 2026-09-17 快照 · EVA 小游戏 v1.4.1
+
+**目标**：维护 EVA 小游戏合集（9 个玩法），持续新增玩法、调整视觉、发版并同步本机安装。
+
+**已确认决定**
+- 项目路径以 **`D:\zcode-projects\eva-lianliankan`** 为准；原工作区路径 `C:\Users\17537\.zcode\workspace\default\eva-lianliankan` 已作废（09-13 13:30 被移动，工作区现仅剩 `lianliankan-desktop`、`shizheng-news`）
+- 本机入口走 vbs → `pythonw desktop.py`（pywebview 独立窗口）：本机 WDAC 会拦截无签名 exe
+- 发版统一走 `scripts/build_release.py`（构建 → 拷资源 → zip → 安装器 → 发布命名 → **自动同步本机安装目录与桌面/开始菜单快捷方式**）
+- 推送远端走 `scripts/api_push_files.py`（Git Data API）：直连 `git push` 常被本机代理阻断
+
+**当前状态**
+- 版本 **v1.4.1**，三处一致：`serve.py` = 本机安装目录 = GitHub Release
+- 9 个玩法：连连看 `index` / 五珠 `gomoku` / 观景 `view` / 蜘蛛 `spider` / 扫雷 `mine` / 数独 `sudoku` / 拼图 `puzzle` / 接龙 `klondike` / 三消 `match3`
+- 回归测试 **42 项全过**：蜘蛛 11 / 数独 5 / 拼图 8 / 接龙 8 / 三消 10
+- 扫雷玻璃面板 + 方块 EVA 元素（commit `92a2cf4`）仅在本机/仓库，**未打包进安装包**
+- git 工作区干净，HEAD `8a5daf6`
+
+**待办**
+1. 扫雷视觉改动是否发 v1.4.2（打包 + Release + 本地同步）
+2. GitHub 旧 Release（≤ v1.3.0）未清理 —— 需明确授权（不可逆）
+3. ZCode 框架缺陷（任务完成后反复空调用不停止）反馈报告已入仓，待提交智谱官方
+
+**关键位置**
+- `serve.py:56` VERSION；`:60` `_github_token()`（匿名限流修复）；`:75` `check_update()`
+- `deco.js:17` `--deco-gutter` 让位；`:351-356` `window.__decoGutter`
+- `background.js:132/134` `__bgCurrentItem` / `__bgShowSrc`
+- `gallery_panel.js:118/141/268` 底部图库入口注入与页内浮层
+- `index.html:236/501/1411` 三消入口 CSS / 按钮 / 路由
+- `mine.html:35` `.glass` 玻璃面板；`:100/109` 方块 EVA 伪元素；`:287` 36×36·200
+- `match3.html:310/330/470` genBoard / findMatches / resolveBoard；`:665` 宝石预加载
+- 构建脚本：`scripts/build_release.py`、`scripts/refresh_local.py`、`scripts/api_push_files.py`
