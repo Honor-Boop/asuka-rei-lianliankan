@@ -35,3 +35,12 @@
 - `mine.html:35` `.glass` 玻璃面板；`:100/109` 方块 EVA 伪元素；`:287` 36×36·200
 - `match3.html:310/330/470` genBoard / findMatches / resolveBoard；`:665` 宝石预加载
 - 构建脚本：`scripts/build_release.py`、`scripts/refresh_local.py`、`scripts/api_push_files.py`
+
+---
+
+## 2026-09-17 快照 · 增量（健康检查 + 环境限制）
+
+- **全项目体检通过、无真实错误**：HTML 内联脚本 10 页 / JS 3 个 / Python 19 个语法全 OK；页面本地引用无缺失；大厅 9 入口路由有效；素材齐（牌面 52/52、宝石 6/6、角色图 28）；回归测试 42/42；版本三处一致 v1.4.1；安装目录与项目 10 个核心文件 md5 逐个一致；10 页 HTTP 200；壁纸轮换正常（39 张）
+- 两处「疑似问题」确认为正常：各页 2 张 img 失败 = 装饰灯箱/图库灯箱的**空占位**；观景页无装饰栏 = 该页有意不加载 deco.js
+- **环境限制**：本会话 memory MCP 已断开（`mcp__memory__*` 均返回 Tool not found，headroom MCP 正常）→ 持久性结论改由本文件承担；后续会话 memory 恢复后可补写
+- 本文件即跨会话的「项目状态 + 已确认决定」权威来源
