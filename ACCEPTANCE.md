@@ -1,30 +1,32 @@
-# 验收报告 · 扫雷界面半透明化 + 方块 EVA 元素（2026-09-12）
+# 验收报告 · v1.4.2 发版（扫雷界面半透明 + 方块 EVA 元素）（2026-09-17）
 
 ## 需求
-“将扫雷的界面增加不透明度，方块也带有eva元素”
-（按语义即：界面使用半透明材质透出背景壁纸；方块加入 EVA 视觉元素）
+用户选定待办项「扫雷玻璃面板 + 方块 EVA 元素（92a2cf4）未打包 → 是否发 v1.4.2」并下达「更新」。
 
-## 交付（mine.html，玩法逻辑零改动）
-### 1. 玻璃质感面板（半透明 + 模糊）
-- `header`、3 个统计格（使徒余量/时间/最佳）、棋盘容器 `#grid` 统一挂 `.glass`：
-  底色 rgba(28,22,62,.42) + `backdrop-filter: blur(9px) saturate(1.25)`，
-  壁纸背景透出，与其它玩法页观感一致
-- 棋盘自身底色由 rgba(0,0,0,.18) 调整为 rgba(20,16,46,.34)
+## 交付
+### 1. 版本与产物
+- `serve.py` VERSION → **v1.4.2**
+- 重新打包：`dist/EVA-MiniGames-Setup-v1.4.2.exe`（154,531,048 B）、`dist/EVA小游戏.zip`、绿色版目录
+- 旧包清理：删除 v1.4.1，dist 仅保留 v1.4.2
+- 打包脚本自动同步本机安装目录（v1.4.2）并重建桌面/开始菜单快捷方式
 
-### 2. 方块 EVA 元素
-- **盖牌**：
-  · 右上角 **黄黑警示 UV 斜纹**（repeating-linear-gradient 45°，NERV 危险条纹风格，55% 透明度）
-  · 右下角 **六边形力场描边**（rotate(45°) 方框），绫波蓝/明日香橙按每 3 格交替
-- **翻开的数字格**：极淡 NERV 绿斜纹底纹（repeating-linear-gradient 135°）
+### 2. 包内校验（zip 内实测）
+- serve.py = v1.4.2
+- 扫雷：含玻璃面板（`.glass` + `backdrop-filter`）✓、含方块 EVA 伪元素（NERV 警示纹 + 力场六边形）✓、36×36 难度 ✓
+- 三消：角色头像宝石（`GEM_IMGS`）✓、宝石图 6 张在包内 ✓、测试文件未泄漏 ✓
 
-## 验证证据（真实浏览器实测）
-- header.glass：背景 rgba(28,22,62,0.42)、backdrop-filter blur(9px) saturate(1.25)、圆角 14px ✓
-- 3 个 .stat.glass ✓；#grid.glass ✓
-- 盖牌 ::before = 黄黑 UV 条纹 ✓；::after = 六边形描边且蓝/橙交替 ✓（实测序列 蓝,蓝,橙,蓝,蓝,橙）
-- 翻开格 NERV 绿纹理生效 ✓（曾发现被 `.open.zero` 的 background 简写覆盖，已修层叠顺序并复验）
-- 游戏可玩性：翻 47 格洪泛展开正常、计时启动正常
+### 3. GitHub Release（更新公告）
+- Release **v1.4.2**「EVA 小游戏 v1.4.2 · 扫雷界面半透明 + 方块 EVA 元素」
+- 公告 602 字，含玻璃面板 / 盖牌 NERV 条纹 / 六边形力场 / 翻开格纹理说明，并汇总此前版本特性
+- 资产 `EVA-MiniGames-Setup-v1.4.2.exe` 上传成功，远端 154,531,048 B 与本地一致
 
-## 同步
-- git commit 92a2cf4，已推送 main
-- 本机安装目录已同步 mine.html（桌面程序刷新即生效）
-- 未重打包安装包/Release（纯视觉改动，可随下次发版一并带上）
+## 验证证据
+- 更新检测：`ok=true current=v1.4.2 latest=v1.4.2 update=false`，公告含「半透明」说明
+   （即旧版本客户端会正确看到升级提示）
+- 远端 releases/latest：tag v1.4.2，资产大小一致
+- 本机安装目录：serve.py = v1.4.2，mine.html 含玻璃面板与方块 EVA 样式
+- 代码推送 main（commit f057caa0ed）
+
+## 备注
+- 本机 WDAC 仍拦截无签名 exe，本机入口为桌面 vbs → pywebview；安装包供其他电脑使用
+- GitHub 旧 Release（≤ v1.3.0 及 v1.4.0/1）仍保留，未做删除
