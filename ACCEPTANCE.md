@@ -30,3 +30,31 @@
 ## 备注
 - 本机 WDAC 仍拦截无签名 exe，本机入口为桌面 vbs → pywebview；安装包供其他电脑使用
 - GitHub 旧 Release（≤ v1.3.0 及 v1.4.0/1）仍保留，未做删除
+
+---
+
+# 验收报告 · 会话状态核实与同步（v1.4.2 确认发版完成）（2026-09-17）
+
+## 需求
+用户指令「继续 EVA 小游戏」并读取 SESSION-NOTES.md 恢复上下文。
+
+## 核实结论
+- **待办 1（发 v1.4.2）已完成**（上会话末尾）：提交 `6270641` 发版 + `667bd92` 验收；
+  `serve.py:56` VERSION = v1.4.2；mine.html 玻璃面板与方块 EVA 样式在位；
+  ACCEPTANCE.md 已有 v1.4.2 完整验收章节（包内校验 / Release / 本机同步 / 升级闭环全过）
+- **本地/远程一致**：`git fetch origin main` 成功；远程 main `e8f6899` 与本地 HEAD `667bd92`
+  内容一致（SHA 不同为 Git Data API 重建历史的正常现象）；仅 2 处有意差异——
+  `反馈_ZCode重复空闲缺陷.md` 与 `.gitignore` 的 `.tmp-*` 规则未列入推送清单（内部文件不进公开仓库）
+
+## 本次交付与验收
+| 验收项 | 方法 | 结果 |
+|---|---|---|
+| v1.4.2 状态核实 | git log / grep serve.py / mine.html 检查 | ✓ 通过 |
+| 本地/远程一致性 | git fetch + git diff 树对比 | ✓ 通过（仅有意排除项） |
+| SESSION-NOTES.md 增量3 快照 | 已追加 v1.4.2 完成状态与剩余待办，本地提交 `97c1e0d` | ✓ 通过 |
+| 远程同步 | api_push_files.py 推送，GitHub API 返回 ref updated → `3b156a6` | ✓ 通过 |
+| memory 版本同步 | 删除 v1.4.1 观察、写入 v1.4.2 + 剩余待办 | ✓ 通过 |
+
+## 剩余待办（均需用户决策，未擅自执行）
+1. GitHub 旧 Release（≤ v1.3.0 及 v1.4.0/1）清理 —— 不可逆，需明确授权
+2. ZCode 框架缺陷反馈报告提交智谱官方 —— 外向动作，等指示
