@@ -238,6 +238,12 @@
   .mode-opt[data-mode="klondike"]:hover { border-color: rgba(255,158,196,.6); box-shadow: 0 0 18px rgba(255,158,196,.25); }
   .mode-opt[data-mode="mine"]:hover { border-color: rgba(255,213,74,.6); box-shadow: 0 0 18px rgba(255,213,74,.25); }
   .mode-opt[data-mode="spider"]:hover { border-color: rgba(112,255,184,.6); box-shadow: 0 0 18px rgba(112,255,184,.25); }
+  .mode-opt[data-mode="shmup"] b { color: #5ce1ff; }
+  .mode-opt[data-mode="shmup"]:hover { border-color: rgba(92,225,255,.6); box-shadow: 0 0 18px rgba(92,225,255,.25); }
+  .mode-opt[data-mode="sudoku"] b { color: #9fb4ff; }
+  .mode-opt[data-mode="sudoku"]:hover { border-color: rgba(159,180,255,.6); box-shadow: 0 0 18px rgba(159,180,255,.25); }
+  .mode-opt[data-mode="tower"] b { color: #ff6b6b; }
+  .mode-opt[data-mode="tower"]:hover { border-color: rgba(255,107,107,.6); box-shadow: 0 0 18px rgba(255,107,107,.28); }
   .mode-opt .em-new { color: var(--gold); }
 
   /* ---------- 结果 / 战绩 弹窗 ---------- */
@@ -502,6 +508,16 @@
         <b>三消</b>
         <span>交换宝石连锁消除<br>限时冲分 · AT碎裂</span>
         <em>新玩法</em>
+      </button>
+      <button class="diff-opt mode-opt" data-mode="shmup">
+        <b>EVA 出击</b>
+        <span>驾机迎击使徒弹幕<br>同步率暴走 · 三段 Boss</span>
+        <em>动作射击</em>
+      </button>
+      <button class="diff-opt mode-opt" data-mode="tower">
+        <b>使徒来袭</b>
+        <span>通道布防拦截使徒<br>四类炮台 · 波次防线战</span>
+        <em>策略塔防</em>
       </button>
     </div>
     <button id="modeCancel" style="display:none;margin-top:18px;font-family:inherit;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:8px 22px;cursor:pointer">返回当前对局</button>
@@ -1409,6 +1425,8 @@ document.querySelectorAll(".mode-opt").forEach(btn => {
     if (btn.dataset.mode === "puzzle") { location.href = "puzzle.html"; return; }
     if (btn.dataset.mode === "klondike") { location.href = "klondike.html"; return; }
     if (btn.dataset.mode === "match3") { location.href = "match3.html"; return; }
+    if (btn.dataset.mode === "shmup") { location.href = "shmup.html"; return; }
+    if (btn.dataset.mode === "tower") { location.href = "tower.html"; return; }
     if (diffKey) resumeTimer(); else openDiff(false);
   });
 });
