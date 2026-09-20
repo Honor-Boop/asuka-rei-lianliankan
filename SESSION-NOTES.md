@@ -106,3 +106,18 @@
 - `shmup.html`：配置 `DIFFS/TYPES/P`；纯逻辑段（镜像源）；`updateSync/hurtPlayer` 同步率与力场；`updateBoss` 三段形态
 - `tower.html`：`WAVE_PLAN/TOWERS/ANGELS/WAY_GRID`；纯逻辑段；`updateTowers` 选靶与 AoE；`build/upgrade/sell`
 - `shmup-test.js`（24 项）/ `tower-test.js`（28 项）：镜像校验脚本见 ACCEPTANCE.md 记录的方法
+
+---
+
+## 2026-09-20 快照 · 增量 5（待办处理：反馈报告已提交 / Release 不清理）
+
+- **待办 2 已完成**：ZCode 框架缺陷报告已按官方 bug_report 模板提交到官方反馈仓库
+  → **https://github.com/zai-org/feedback/issues/740**（2026-09-20 提交，open，正文 1802 字，
+  含复现步骤/期望 vs 实际/版本/环境；未附日志，因含个人会话内容，需要时可导出补发）
+  - 官方渠道有两类：应用内「反馈」入口 / bigmodel 控制台工单（需登录，非自动化可完成），
+    以及公开的 GitHub 反馈仓库 `zai-org/feedback`（本次采用，可全程追踪）
+  - 提交前已按官方要求查重（无同类 issue）；模板必填字段：类别（工具调用/MCP）、框架（ZCode Agent 自研）、
+    严重程度（Major）、复现频率（偶现）、版本、环境
+  - 版本核对：缺陷首现 2026-09-12；日志显示 09-15~09-19 为 **0.16.5**；提交时 **0.16.9**
+- **待办 1 已由用户明确否决**：GitHub 旧 Release **不清理**（曾被授权后又被叫停，勿再执行）
+- 本地报告 `反馈_ZCode重复空闲缺陷.md` 已写入提交记录（该文件仍**仅存本地**，不进公开仓库）
