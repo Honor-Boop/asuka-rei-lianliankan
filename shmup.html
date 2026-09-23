@@ -553,13 +553,14 @@ function updateSync(dt) {
     }
     return;
   }
-  player.sync = syncDecay(player.sync, dt, false);
-  if (enterBerserk(player.sync)) {
-    berserkT = P.berserkTime;
+  if (enterBerserk(player.sync)) {                          // 必须先判暴走再衰减：增益被 clamp 在恰好 100，
+    berserkT = P.berserkTime;                               // 若先衰减会永远差一点而无法触发（v1.5.0 的暴走因此失效）
     flashT = .9;
     toast("⚠ 同步率 100% —— 暴走模式！");
     sndBerserk(); pushDeco();
+    return;
   }
+  player.sync = syncDecay(player.sync, dt, false);
 }
 function hurtPlayer() {
   if (player.invuln > 0 || berserkT > 0 || over) return;

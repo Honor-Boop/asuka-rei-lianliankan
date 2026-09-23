@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>AT 力场弹球 · BREAKOUT</title>
+<style>
+  :root {
+    --bg1: #2c2256; --bg2: #1b1544;
+    --panel: rgba(255,255,255,.11); --panel-border: rgba(255,255,255,.24);
+    --rei: #74c4ff; --asuka: #ff8055; --gold: #ffe066;
+    --eva-green: #70ffb8; --eva-red: #ff5a3c; --text: #fff; --text-dim: #c9c2ea;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(88,182,255,.16), transparent 60%),
+      radial-gradient(1000px 700px at 12% 110%, rgba(255,106,61,.15), transparent 60%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 8px 18px;
+    user-select: none; -webkit-user-select: none;
+  }
+  header {
+    width: 100%; max-width: 1080px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 4px 6px 10px;
+  }
+  .brand { display: flex; flex-direction: column; }
+  .logo {
+    font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--rei), #b48cff 55%, var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.05;
+  }
+  .subtitle { font-size: 11px; color: var(--text-dim); letter-spacing: 3px; margin-top: 2px; }
+  .stats { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 10px; padding: 4px 12px; text-align: center; min-width: 62px;
+  }
+  .stat .label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+  .stat b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  #scoreStat b { color: var(--gold); }
+  #levelStat b { color: var(--eva-green); }
+  #lifeStat b { color: var(--eva-red); letter-spacing: 1px; }
+  #syncStat b { color: var(--rei); }
+  #syncStat.berserk b { color: var(--eva-red); text-shadow: 0 0 12px rgba(255,90,60,.8); }
+  .controls { display: flex; gap: 7px; width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .controls button {
+    font-family: inherit; font-size: 12.5px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border);
+    border-radius: 9px; padding: 6px 12px; cursor: pointer; transition: all .15s;
+  }
+  .controls button:hover { background: rgba(255,255,255,.18); }
+  .controls button.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(255,224,102,.25); }
+  .controls button:disabled { opacity: .4; cursor: not-allowed; }
+  .controls .sep { width: 1px; background: var(--panel-border); margin: 0 2px; }
+
+  #stageWrap { width: 100%; display: flex; justify-content: center; margin-top: 2px; }
+  #cv {
+    display: block; touch-action: none; cursor: none;
+    border: 1px solid rgba(255,255,255,.28); border-radius: 12px;
+    box-shadow: 0 8px 34px rgba(0,0,0,.45), inset 0 0 40px rgba(116,196,255,.05);
+    background: rgba(6,8,22,.35);
+  }
+  #tip { margin-top: 6px; font-size: 12px; color: var(--text-dim); text-align: center; min-height: 18px; }
+  #tip b { color: var(--gold); }
+
+  #alarm { position: fixed; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center; pointer-events: none; }
+  #alarm.go { display: flex; }
+  #alarm .banner {
+    font-size: clamp(28px, 5.4vw, 58px); font-weight: 900; font-style: italic; letter-spacing: 8px;
+    color: var(--eva-green); text-shadow: 0 0 26px rgba(112,255,184,.9), 0 0 60px rgba(112,255,184,.45);
+    animation: alarmPulse 1s ease-in-out infinite;
+  }
+  #alarm.bad .banner { color: var(--eva-red); text-shadow: 0 0 26px rgba(255,90,60,.9); }
+  @keyframes alarmPulse { 50% { opacity: .55; transform: scale(1.04); } }
+  #alarm .sub { position: absolute; bottom: 16vh; left: 0; right: 0; text-align: center;
+                font-size: 14px; letter-spacing: 4px; color: #fff; }
+
+  #overlay { position: fixed; inset: 0; z-index: 40; display: none; align-items: flex-end;
+             justify-content: center; background: rgba(8,5,18,.12); padding-bottom: 7vh; }
+  #overlay.show { display: flex; }
+  .end-card {
+    text-align: center; max-width: 820px; width: calc(100vw - 40px);
+    background: linear-gradient(160deg, rgba(27,21,68,.55), rgba(20,14,36,.5));
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,.28);
+    border-radius: 16px; padding: 12px 22px 14px; box-shadow: 0 6px 30px rgba(0,0,0,.35);
+  }
+  .end-card h2 { font-size: 19px; margin-bottom: 2px; font-style: italic; letter-spacing: 2px; }
+  .end-card h2.win { background: linear-gradient(90deg, var(--rei), var(--asuka));
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .end-card h2.lose { color: var(--eva-red); text-shadow: 0 0 16px rgba(255,90,60,.5); }
+  .end-card p { color: var(--text-dim); font-size: 12.5px; margin: 1.5px 0; }
+  .end-card p b { color: var(--gold); }
+  .end-card .btns { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+  .end-card button { font-family: inherit; font-size: 13px; font-weight: 700; color: #14101f;
+    background: linear-gradient(90deg, var(--rei), var(--asuka)); border: none;
+    border-radius: 9px; padding: 7px 18px; cursor: pointer; }
+  .end-card button.ghost { background: var(--panel); color: var(--text);
+    border: 1px solid var(--panel-border); font-weight: 400; }
+
+  #toast { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%) translateY(20px);
+    background: rgba(34,25,66,.95); border: 1px solid var(--panel-border); color: var(--text);
+    padding: 8px 16px; border-radius: 9px; font-size: 13px; opacity: 0; transition: all .25s;
+    z-index: 60; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  #helpModal { position: fixed; inset: 0; z-index: 120; display: none; align-items: center; justify-content: center;
+    background: rgba(8,5,18,.6); backdrop-filter: blur(4px); }
+  #helpModal.show { display: flex; }
+  #helpModal .box { max-width: 580px; width: calc(100vw - 50px); max-height: 84vh; overflow: auto;
+    background: rgba(34,25,66,.95); border: 1px solid rgba(255,224,102,.4); border-radius: 14px;
+    padding: 20px 26px; color: #fff; line-height: 1.8; font-size: 13.5px; }
+  #helpModal h3 { font-size: 17px; letter-spacing: 2px; color: var(--gold); font-style: italic; margin-bottom: 8px; }
+  #helpModal .rule b { color: var(--gold); }
+  #helpModal .close { margin-top: 14px; float: right; font-family: inherit; font-size: 13px; font-weight: 700;
+    color: #14101f; border: none; border-radius: 9px; padding: 8px 22px; cursor: pointer;
+    background: linear-gradient(90deg, var(--rei), var(--asuka)); }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="46" height="50" viewBox="0 0 104 64" aria-hidden="true" style="flex:none;filter:drop-shadow(0 0 6px rgba(232,51,42,.5))">
+    <path d="M8 60 A 44 44 0 0 1 96 60 Z" fill="#c8102e" stroke="#7d0a1d" stroke-width="3"/>
+    <path d="M52 60 V 20 M52 36 C 41 32 33 24 31 13 M52 36 C 63 32 71 24 73 13
+             M52 47 C 39 45 27 37 23 27 M52 47 C 65 45 77 37 81 27"
+          stroke="#ffd9dd" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="brand">
+    <div class="logo">AT 力场弹球 · BREAKOUT</div>
+    <div class="subtitle">明日香 × 绫波丽 · 装甲破坏作战</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="label">难度</div><b id="diffTag">正規隊員</b></div>
+    <div class="stat" id="scoreStat"><div class="label">分数</div><b>0</b></div>
+    <div class="stat" id="levelStat"><div class="label">关卡</div><b>1/4</b></div>
+    <div class="stat" id="lifeStat"><div class="label">备用球</div><b>●●●</b></div>
+    <div class="stat" id="syncStat"><div class="label">同步率</div><b>45%</b></div>
+    <div class="stat"><div class="label">最佳</div><b id="bestVal">--</b></div>
+  </div>
+  <div class="controls">
+    <button data-d="easy">見習い 5 列</button>
+    <button data-d="normal">正規隊員 6 列</button>
+    <button data-d="hard">使徒級 6 列·硬</button>
+    <span class="sep"></span>
+    <button id="pauseBtn" title="暂停 / 继续（P 或 Esc）">⏸ 暂停</button>
+    <button id="newBtn">♻ 重开</button>
+    <button id="helpBtn">❓ 玩法</button>
+    <button id="modeBtn">🎮 玩法选择</button>
+  </div>
+</header>
+
+<div id="stageWrap"><canvas id="cv"></canvas></div>
+<div id="tip">← → / A D 或直接移动指针控制 AT 力场 · <b>空格</b> / 点击发射阳电子炮 · <b>P</b> 暂停</div>
+
+<div id="overlay">
+  <div class="end-card">
+    <h2 id="endTitle">作 戦 完 成 ！</h2>
+    <p id="endStats">得分 --</p>
+    <p id="endNote"></p>
+    <div class="btns">
+      <button id="againBtn">再 来 一 局</button>
+      <button id="modeBtn2" class="ghost">返回玩法选择</button>
+    </div>
+  </div>
+</div>
+
+<div id="alarm"></div>
+<div id="toast"></div>
+
+<div id="helpModal">
+  <div class="box">
+    <h3>AT 力场弹球 · 玩法说明</h3>
+    <div class="rule"><b>目标</b>：用 AT 力场挡板把阳电子炮弹向使徒装甲，打光全部装甲块即通过本关；关卡全部通关则作战完成，备用球耗尽则失败。</div>
+    <div class="rule"><b>操作</b>：← → / A D 移动挡板，也可以直接把指针（或手指）移动到想去的横向位置；<b>空格 / 点击</b>发射。球会在挡板上待机直到你发射。</div>
+    <div class="rule"><b>反弹角度</b>：球打在挡板<b>不同位置</b>会改变反弹角度——越靠边角度越斜，用这一点可以把球送向侧边死角。挡板横向移动也会给球带上旋转。</div>
+    <div class="rule"><b>装甲块</b>：紫色＝一层（一击碎）／橙色＝重装（两击）／金色＝核心（三击，分值最高）。<b>击破装甲会提升同步率</b>。</div>
+    <div class="rule"><b>同步率</b>：击破装甲累积，随时间回落，<b>漏球大幅下降</b>；满 100% 进入<b>暴走 6 秒</b>——阳电子炮获得穿透（连续贯穿装甲不反弹）、分数翻倍，屏幕泛红，并实时驱动右侧装饰栏的同步率面板。</div>
+    <div class="rule"><b>道具</b>（击破装甲有概率掉落）：<b>W</b> 力场加宽 / <b>M</b> 三球分裂 / <b>P</b> 穿透弹 / <b>S</b> 同步率 +18%。</div>
+    <div class="rule"><b>难度</b>：見習い（球慢、挡板宽、3 球、5 关）／正規隊員（标准、6 关）／使徒級（球快、挡板窄、2 球、6 关，重装装甲更多）。关卡越深球速越快。</div>
+    <button class="close">知道了</button>
+  </div>
+</div>
+
+<script>document.write('<script src="wallpapers/manifest.js?v=' + Date.now() + '"><\/script>');</script>
+<script src="background.js"></script>
+<script src="deco.js"></script>
+<script src="gallery_panel.js"></script>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+
+/* ================= 配置 ================= */
+const W = 760, H = 920;                                  // 逻辑分辨率
+const COLS = 10, BW = 68, BH = 28, BGAP = 4, BTOP = 76;
+const DIFFS = {
+  easy:   { key: "easy",   name: "見習い",   levels: 5, ballSpeed: 430, paddleW: 170, lives: 3, rows: 5, armor: .10, core: .00 },
+  normal: { key: "normal", name: "正規隊員", levels: 6, ballSpeed: 520, paddleW: 138, lives: 3, rows: 6, armor: .22, core: .05 },
+  hard:   { key: "hard",   name: "使徒級",   levels: 6, ballSpeed: 605, paddleW: 112, lives: 2, rows: 6, armor: .34, core: .10 },
+};
+const PADDLE_H = 16, PADDLE_Y = H - 78, BALL_R = 9, MIN_VX = .14;
+const KINDS = {
+  a: { hp: 1, score: 10,  color: "#7b5cff", name: "装甲" },
+  b: { hp: 2, score: 25,  color: "#ff8055", name: "重装装甲" },
+  c: { hp: 3, score: 60,  color: "#ffe066", name: "核心装甲" },
+};
+const SYNC = { start: 45, decay: .3, lose: 12, max: 100, berserk: 6, after: 40 };
+const SYNC_GAIN = { a: 2.4, b: 4.0, c: 7.0 };            // 按装甲类型给同步率
+const POWER = { w: 14, p: 7, m: 3 };                     // 道具持续秒数（m 为分裂球数上限）
+
+/* ================= 状态 ================= */
+let diffKey = "normal", cfg = DIFFS[diffKey];
+let paddle, balls, bricks, powerups, parts, trail;
+let level, score, combo, lives, sync, berserkT, wideT, pierceT, speed;
+let over, victory, paused, gameTime, flashT, shakeT, decoAcc, lastTs, rafId = 0, started = false;
+let stuck = true;
+let brickIdleT = 0;                                  // 距上次击破的时间（残局防卡死）
+
+/* ================= 音效 ================= */
+let audioCtx = null, soundOn = true;
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function beep(f, d, t = "sine", g = .1, delay = 0) {
+  if (!soundOn || !audioCtx) return;
+  const s = audioCtx.currentTime + delay;
+  const o = audioCtx.createOscillator(), v = audioCtx.createGain();
+  o.type = t; o.frequency.value = f;
+  v.gain.setValueAtTime(g, s);
+  v.gain.exponentialRampToValueAtTime(.0001, s + d);
+  o.connect(v); v.connect(audioCtx.destination);
+  o.start(s); o.stop(s + d + .02);
+}
+const sndPaddle = () => beep(520, .07, "square", .05);
+const sndWall   = () => beep(380, .04, "triangle", .028);
+const sndHit    = () => beep(680, .05, "square", .035);
+const sndBreak  = () => { beep(300, .1, "triangle", .05); beep(520, .12, "square", .035, .05); };
+const sndCore   = () => { [420, 560, 720, 900].forEach((f, i) => beep(f, .16, "triangle", .05, i * .07)); };
+const sndLose   = () => { beep(150, .3, "sawtooth", .08); beep(90, .38, "square", .06, .05); };
+const sndPower  = () => { [660, 880, 1180].forEach((f, i) => beep(f, .1, "square", .045, i * .06)); };
+const sndBerserk = () => { [200, 300, 450, 700, 1000].forEach((f, i) => beep(f, .3, "sawtooth", .06, i * .07)); };
+const sndLevel  = () => { [523, 659, 784].forEach((f, i) => beep(f, .2, "triangle", .06, i * .1)); };
+const sndWin    = () => [523, 659, 784, 1046].forEach((f, i) => beep(f, .28, "triangle", .07, i * .13));
+
+/* ============ 纯逻辑（breakout-test.js 逐字镜像） ============ */
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+/* 圆与矩形碰撞：返回是否相交，并给出最小穿透轴与法线方向 */
+function circleRectHit(cx, cy, r, rx, ry, rw, rh) {
+  const nx = clamp(cx, rx, rx + rw), ny = clamp(cy, ry, ry + rh);
+  const dx = cx - nx, dy = cy - ny;
+  if (dx * dx + dy * dy > r * r) return { hit: false };
+  const left = cx + r - rx, right = rx + rw - (cx - r), top = cy + r - ry, bottom = ry + rh - (cy - r);
+  let axis = "y", pen = Math.min(left, right, top, bottom);
+  if (pen === left) axis = "left";
+  else if (pen === right) axis = "right";
+  else if (pen === top) axis = "top";
+  else axis = "bottom";
+  return { hit: true, axis, pen };
+}
+/* 挡板反弹：按命中位置换算角度（越靠边越斜），speed 恒定 */
+function paddleBounce(bx, px, pw, speed, maxAngle) {
+  const half = pw / 2;
+  const off = clamp((bx - (px + half)) / half, -1, 1);
+  const ang = off * (maxAngle === undefined ? 1.05 : maxAngle);
+  let vx = Math.sin(ang) * speed, vy = -Math.cos(ang) * speed;
+  const minX = speed * MIN_VX;                             // 保底横向分量：避免正中接球后的垂直死循环
+  if (Math.abs(vx) < minX) vx = (off < 0 ? -1 : 1) * minX;
+  return { vx, vy };
+}
+function ballSpeedFor(diff, level) { return DIFFS[diff].ballSpeed * Math.pow(1.08, level - 1); }
+function paddleWidthFor(diff, wide) { return DIFFS[diff].paddleW * (wide ? 1.5 : 1); }
+/* 关卡编成：rows×COLS 的装甲阵列，rng 可注入（测试用种子化） */
+function brickLayout(diff, level, rng) {
+  const R = rng || Math.random, d = DIFFS[diff], out = [];
+  const rows = d.rows;
+  const armor = clamp(d.armor + (level - 1) * .05, 0, .6);
+  const core = clamp(d.core + (level - 1) * .03, 0, .3);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const roll = R();
+      let kind = "a";
+      if (roll < core) kind = "c";
+      else if (roll < core + armor) kind = "b";
+      out.push({ col: c, row: r, kind, hp: KINDS[kind].hp });
+    }
+  }
+  // 顶层留出缺口，让球能钻进阵型深处
+  return out.filter(b => !(b.row === 0 && (b.col === 0 || b.col === COLS - 1)));
+}
+function brickTotal(list) { return list.length; }
+function remainingBricks(list) { return list.filter(b => b.hp > 0).length; }
+function brickScore(kind, berserk, combo) {
+  const mult = 1 + Math.min(combo, 20) * .05;
+  return Math.round(KINDS[kind].score * mult * (berserk ? 2 : 1));
+}
+function syncGainBrick(cur, kind, berserk) { return berserk ? cur : clamp(cur + (SYNC_GAIN[kind] || SYNC_GAIN.a), 0, SYNC.max); }
+function syncGainLevel(cur) { return clamp(cur + 6, 0, SYNC.max); }
+function syncLoss(cur) { return clamp(cur - SYNC.lose, 0, SYNC.max); }
+function syncDecay(cur, dt, berserk) { return berserk ? cur : clamp(cur - SYNC.decay * dt, 0, SYNC.max); }
+function enterBerserk(cur) { return cur >= SYNC.max; }
+function afterBerserk() { return SYNC.after; }
+/* 道具掉落：12% 概率，四选一；返回 null 表示不掉落 */
+function powerupRoll(rng) {
+  const R = rng || Math.random;
+  const roll = R();
+  if (roll >= .12) return null;
+  const pick = R();
+  return pick < .3 ? "w" : pick < .58 ? "p" : pick < .82 ? "m" : "s";
+}
+function nextLevelState(diff, level) {
+  const lv = level + 1;
+  return { level: lv, speed: ballSpeedFor(diff, lv), rows: DIFFS[diff].rows,
+           armor: clamp(DIFFS[diff].armor + (lv - 1) * .05, 0, .6) };
+}
+/* 轨道微调：速度大小不变，方向偏转 ±0.15 弧度（残局卡死时的防呆） */
+function nudgeVelocity(vx, vy, rand) {
+  const sp = Math.hypot(vx, vy) || 1;
+  const a = Math.atan2(vy, vx) + (rand - .5) * .3;
+  return { vx: Math.cos(a) * sp, vy: Math.sin(a) * sp };
+}
+/* 子步数：防止高速穿透（每步不超过 6px） */
+function substeps(dist) { return Math.max(1, Math.ceil(dist / 6)); }
+
+/* ================= 生成 ================= */
+function newBall(x, y, vx, vy) { return { x, y, vx, vy, r: BALL_R }; }
+function launch() {
+  if (!stuck || over) return;
+  stuck = false;
+  const ang = -Math.PI / 2 + (Math.random() - .5) * .9;
+  const sp = speed;
+  balls = [newBall(paddle.x + paddle.w / 2, PADDLE_Y - BALL_R - 1, Math.cos(ang) * sp, Math.sin(ang) * sp)];
+  trail = [];
+  sndWall();
+}
+function burst(x, y, color, n, spd) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.283, s = spd * (.35 + Math.random());
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: .4 + Math.random() * .3, max: .7, color });
+  }
+}
+
+/* ================= 更新 ================= */
+function update(dt) {
+  gameTime += dt;
+  updatePaddle(dt);
+  updateBalls(dt);
+  brickIdleT += dt;
+  if (brickIdleT > 20 && !stuck && balls.length && !over) {  // 残局防卡死：周期性微调轨道
+    brickIdleT = 0;
+    for (const b of balls) {
+      const nv = nudgeVelocity(b.vx, b.vy, Math.random());
+      b.vx = nv.vx; b.vy = nv.vy;
+    }
+    toast("阳电子炮轨道修正");
+  }
+  updatePowerups(dt);
+  updateParts(dt);
+  updateSync(dt);
+  if (flashT > 0) flashT -= dt;
+  if (shakeT > 0) shakeT -= dt;
+  if (wideT > 0) { wideT -= dt; if (wideT <= 0) toast("AT 力场宽度恢复"); }
+  if (pierceT > 0) pierceT -= dt;
+  decoAcc += dt;
+  if (decoAcc > .35) { decoAcc = 0; pushDeco(); }
+}
+function updatePaddle(dt) {
+  const sp = 620;
+  const prevX = paddle.x;
+  let dir = 0;
+  if (keys.left) dir -= 1;
+  if (keys.right) dir += 1;
+  const w = paddleWidthFor(diffKey, wideT > 0);
+  if (paddle.w !== w) { const c = paddle.x + paddle.w / 2; paddle.w = w; paddle.x = clamp(c - w / 2, 0, W - w); }
+  if (dir) paddle.x += dir * sp * dt;
+  if (pointer.on) {                                        // 指针跟随（触屏/鼠标拖拽）
+    const want = pointer.x - paddle.w / 2;
+    paddle.x += (want - paddle.x) * Math.min(1, dt * 16);
+  }
+  paddle.x = clamp(paddle.x, 0, W - paddle.w);
+  paddle.vx = dt ? (paddle.x - prevX) / dt : 0;            // 供弹射时带上旋转
+  if (stuck) { balls = []; trail = []; }                   // 待机时球随挡板移动
+}
+function updateBalls(dt) {
+  const list = balls;                                      // 引用快照：过关时 balls 会被换成新数组
+  for (let i = list.length - 1; i >= 0; i--) {
+    const b = list[i];
+    if (!b || balls !== list) break;                       // 关卡已切换 → 不再处理旧球
+    const dist = Math.hypot(b.vx, b.vy) * dt;
+    const steps = substeps(dist);
+    for (let s = 0; s < steps; s++) {
+      b.x += b.vx * dt / steps;
+      b.y += b.vy * dt / steps;
+      walls(b);
+      paddleHit(b);
+      const broke = brickHits(b);
+      if (broke === "core") { burst(b.x, b.y, "#ffe066", 16, 240); sndCore(); }
+    }
+    trail.push({ x: b.x, y: b.y });
+    if (trail.length > 14) trail.shift();
+    if (b.y - b.r > H) {                                   // 漏球
+      if (balls !== list) return;                          // 过关瞬间不再结算漏球
+      balls.splice(i, 1);
+      burst(b.x, H - 10, "#ff5a3c", 14, 200);
+      if (!balls.length) loseBall();
+    }
+  }
+}
+function walls(b) {
+  if (b.x - b.r < 0) { b.x = b.r; b.vx = Math.abs(b.vx); sndWall(); }
+  if (b.x + b.r > W) { b.x = W - b.r; b.vx = -Math.abs(b.vx); sndWall(); }
+  if (b.y - b.r < 0) { b.y = b.r; b.vy = Math.abs(b.vy); sndWall(); }
+}
+function paddleHit(b) {
+  if (b.vy <= 0) return;
+  const hit = circleRectHit(b.x, b.y, b.r, paddle.x, PADDLE_Y, paddle.w, PADDLE_H);
+  if (!hit.hit) return;
+  const sp = Math.hypot(b.vx, b.vy);
+  const nb = paddleBounce(b.x, paddle.x, paddle.w, sp);
+  b.vx = nb.vx + paddle.vx * .12;
+  b.vy = nb.vy;
+  const sp2 = Math.hypot(b.vx, b.vy) || sp;               // 保持速度恒定
+  b.vx = b.vx / sp2 * sp; b.vy = b.vy / sp2 * sp;
+  b.y = PADDLE_Y - b.r - 1;
+  sndPaddle();
+  refreshHud();
+}
+function brickHits(b) {
+  const pierce = pierceT > 0 || berserkT > 0;
+  for (const br of bricks) {
+    if (br.hp <= 0) continue;
+    const rx = br.col * (BW + BGAP) + BGAP, ry = BTOP + br.row * (BH + BGAP);
+    const hit = circleRectHit(b.x, b.y, b.r, rx, ry, BW, BH);
+    if (!hit.hit) continue;
+    br.hp--;
+    brickIdleT = 0;
+    combo++;
+    score += brickScore(br.kind, berserkT > 0, combo);
+    sync = syncGainBrick(sync, br.kind, berserkT > 0);
+    const wasCore = br.kind === "c";
+    const destroyed = br.hp <= 0;
+    if (destroyed) {
+      burst(b.x, b.y, KINDS[br.kind].color, wasCore ? 18 : 10, 190);
+      sndBreak();
+      const drop = powerupRoll();
+      if (drop) powerups.push({ x: rx + BW / 2, y: ry + BH / 2, kind: drop, t: 0 });
+    } else {
+      sndHit();
+    }
+    if (!pierce) {                                         // 无论是否击碎都要反弹（穿透时不反弹）
+      if (hit.axis === "left" || hit.axis === "right") b.vx = -b.vx;
+      else b.vy = -b.vy;
+    }
+    if (destroyed && remainingBricks(bricks) === 0) { levelClear(); return wasCore ? "core" : true; }
+    return destroyed ? (wasCore ? "core" : true) : false;
+  }
+  return false;
+}
+function updatePowerups(dt) {
+  const list = powerups;                                   // 同上：过关会重建该数组
+  for (let i = list.length - 1; i >= 0; i--) {
+    const p = list[i];
+    if (!p || powerups !== list) return;
+    p.t += dt; p.y += 130 * dt;
+    if (p.y > H + 30) { powerups.splice(i, 1); continue; }
+    const hit = circleRectHit(p.x, p.y, 16, paddle.x, PADDLE_Y, paddle.w, PADDLE_H);
+    if (hit.hit) {
+      powerups.splice(i, 1);
+      if (p.kind === "w") { wideT = POWER.w; toast("AT 力场加宽 · " + POWER.w + "s"); }
+      else if (p.kind === "p") { pierceT = POWER.p; toast("穿透弹 · " + POWER.p + "s"); }
+      else if (p.kind === "m") splitBalls();
+      else { sync = clamp(sync + 18, 0, SYNC.max); toast("同步率 +18%"); }
+      sndPower(); refreshHud(); pushDeco();
+    }
+  }
+}
+function splitBalls() {
+  const src = balls.slice(0, 3);
+  for (const b of src) {
+    if (balls.length >= 6) break;
+    for (const off of [-.5, .5]) {
+      if (balls.length >= 6) break;
+      const ang = Math.atan2(b.vy, b.vx) + off;
+      const sp = Math.hypot(b.vx, b.vy);
+      balls.push(newBall(b.x, b.y, Math.cos(ang) * sp, Math.sin(ang) * sp));
+    }
+  }
+  toast("三球分裂");
+}
+function updateParts(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vx *= .96; p.vy *= .96;
+    p.life -= dt;
+    if (p.life <= 0) parts.splice(i, 1);
+  }
+}
+function updateSync(dt) {
+  if (berserkT > 0) {
+    berserkT -= dt;
+    if (berserkT <= 0) { sync = afterBerserk(); toast("暴走结束 · 同步率回落"); refreshHud(); pushDeco(); }
+    return;
+  }
+  if (enterBerserk(sync)) {                                // 必须先判暴走再衰减：增益被 clamp 在恰好 100，
+    berserkT = SYNC.berserk;                               // 若先衰减会永远差 0.005 而无法触发
+    flashT = .9;
+    toast("⚠ 同步率 100% —— 暴走：阳电子炮贯穿！");
+    sndBerserk(); pushDeco();
+    return;
+  }
+  sync = syncDecay(sync, dt, false);
+}
+
+/* ================= 关卡 / 胜负 ================= */
+function loadLevel() {
+  bricks = brickLayout(diffKey, level, Math.random);
+  speed = ballSpeedFor(diffKey, level);
+  stuck = true; balls = []; trail = []; powerups = []; brickIdleT = 0;
+  paddle.w = paddleWidthFor(diffKey, false);
+  paddle.x = clamp(paddle.x, 0, W - paddle.w);
+  wideT = pierceT = 0;
+  combo = 0;
+  refreshHud();
+}
+function levelClear() {
+  score += 500;
+  sync = syncGainLevel(sync);
+  if (level >= cfg.levels) return win();
+  level++;
+  alarm("AREA CLEARED", "第 " + (level - 1) + " 关完成 · 下一波装甲就位");
+  sndLevel();
+  loadLevel();
+}
+function loseBall() {
+  combo = 0;
+  lives--;
+  sync = syncLoss(sync);
+  shakeT = .5; flashT = .45;
+  sndLose();
+  refreshHud(); pushDeco();
+  if (lives < 0) return lose();
+  stuck = true;
+  toast("备用球损失 · 余 " + (lives + 1));
+}
+function win() {
+  if (over) return;
+  over = true; victory = true;
+  score += 3000 + lives * 600;
+  alarm("MISSION COMPLETE", "全部装甲区域已清除");
+  if (window.__decoSyncRate) window.__decoSyncRate(400, true);
+  sndWin(); saveBest();
+  setTimeout(() => showEnd(true), 900);
+}
+function lose() {
+  if (over) return;
+  over = true; victory = false;
+  alarm("BALL LOST", "备用球耗尽 · 作战失败", true);
+  if (window.__decoSyncRate) window.__decoSyncRate(8, false);
+  sndLose(); saveBest();
+  setTimeout(() => showEnd(false), 700);
+}
+function bestKey() { return "eva_breakout_best_" + diffKey; }
+function loadBest() {
+  let v = 0;
+  try { v = Number(localStorage.getItem(bestKey())) || 0; } catch (e) {}
+  $("bestVal").textContent = v ? v : "--";
+  return v;
+}
+function saveBest() {
+  const cur = loadBest();
+  if (score > cur) { try { localStorage.setItem(bestKey(), String(score)); } catch (e) {} }
+  loadBest();
+}
+function showEnd(isWin) {
+  const h2 = $("endTitle");
+  h2.className = isWin ? "win" : "lose";
+  h2.textContent = isWin ? "作 戦 完 成 ！" : "作 戦 失 敗 ……";
+  $("endStats").innerHTML = "得分 <b>" + score + "</b> · 关卡 " + level + "/" + cfg.levels +
+    " · 备用球 " + Math.max(0, lives + 1) + " · 剩余装甲 " + remainingBricks(bricks);
+  const best = loadBest();
+  $("endNote").textContent = isWin
+    ? (score >= best ? "🎉 新纪录！" : "最佳纪录 " + best + " 分")
+    : "已抵达第 " + level + " 关 · 最佳纪录 " + (best || "--") + " 分";
+  $("overlay").classList.add("show");
+}
+
+/* ================= 渲染 ================= */
+const cv = $("cv"), ctx = cv.getContext("2d");
+let gridOff = 0;
+function draw() {
+  ctx.save();
+  if (shakeT > 0) ctx.translate((Math.random() - .5) * 10 * shakeT / .5, (Math.random() - .5) * 10 * shakeT / .5);
+  drawBG();
+  drawBricks();
+  drawPowerups();
+  drawParts();
+  drawPaddle();
+  drawBalls();
+  drawSyncBar();
+  ctx.restore();
+  if (flashT > 0) { ctx.fillStyle = "rgba(255,60,40," + (flashT * .3) + ")"; ctx.fillRect(0, 0, W, H); }
+  if (berserkT > 0) {
+    ctx.strokeStyle = "rgba(255,90,60," + (.35 + Math.sin(gameTime * 12) * .2) + ")";
+    ctx.lineWidth = 10; ctx.strokeRect(5, 5, W - 10, H - 10);
+  }
+}
+function drawBG() {
+  ctx.fillStyle = "rgba(6,9,26,.62)";
+  ctx.fillRect(0, 0, W, H);
+  gridOff = (gridOff + .4) % 56;
+  ctx.strokeStyle = "rgba(116,196,255,.08)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let y = gridOff - 56; y < H; y += 56) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+  for (let x = 0; x < W; x += 56) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(245,197,24,.35)";                 // 顶部警示纹
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, 30); ctx.lineTo(W, 30); ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,.5)";
+  ctx.font = "bold 12px Consolas, monospace";
+  ctx.fillText("AT FIELD GENERATOR · 装甲区 " + level + "/" + cfg.levels, 14, 22);
+}
+function drawBricks() {
+  for (const br of bricks) {
+    if (br.hp <= 0) continue;
+    const x = br.col * (BW + BGAP) + BGAP, y = BTOP + br.row * (BH + BGAP);
+    const k = KINDS[br.kind], dmg = 1 - (br.hp - 1) / k.hp;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y); ctx.lineTo(x + BW - 8, y); ctx.lineTo(x + BW, y + 8);
+    ctx.lineTo(x + BW, y + BH - 8); ctx.lineTo(x + BW - 8, y + BH); ctx.lineTo(x + 8, y + BH);
+    ctx.lineTo(x, y + BH - 8); ctx.lineTo(x, y + 8); ctx.closePath();
+    const g = ctx.createLinearGradient(x, y, x, y + BH);
+    g.addColorStop(0, k.color + "ee"); g.addColorStop(1, "rgba(20,14,40,.9)");
+    ctx.fillStyle = g;
+    ctx.globalAlpha = .45 + .55 * dmg;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = k.color; ctx.lineWidth = 2;
+    ctx.shadowColor = k.color; ctx.shadowBlur = br.kind === "c" ? 14 : 6;
+    ctx.stroke();
+    ctx.restore();
+    if (br.kind === "b" || br.kind === "c") {               // 重装/核心：斜纹标记
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x + 2, y + 2, BW - 4, BH - 4); ctx.clip();
+      ctx.strokeStyle = "rgba(245,197,24,.35)"; ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let i = -BH; i < BW; i += 10) { ctx.moveTo(x + i, y + BH); ctx.lineTo(x + i + BH, y); }
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (br.hp > 1) {                                        // 剩余层数点
+      for (let i = 0; i < br.hp; i++) {
+        ctx.beginPath();
+        ctx.arc(x + BW / 2 - 5 + i * 5, y + BH / 2, 1.8, 0, 7);
+        ctx.fillStyle = "#fff"; ctx.fill();
+      }
+    }
+  }
+}
+function drawPaddle() {
+  const x = paddle.x, w = paddle.w, y = PADDLE_Y;
+  const col = berserkT > 0 ? "#ff5a3c" : pierceT > 0 ? "#ffe066" : "#70ffb8";
+  ctx.save();
+  const g = ctx.createLinearGradient(x, y, x + w, y + PADDLE_H);
+  g.addColorStop(0, "rgba(116,196,255,.85)"); g.addColorStop(.5, col); g.addColorStop(1, "rgba(255,128,85,.85)");
+  ctx.fillStyle = g;
+  ctx.shadowColor = col; ctx.shadowBlur = 14;
+  ctx.beginPath();
+  const cut = 7;
+  ctx.moveTo(x + cut, y); ctx.lineTo(x + w - cut, y); ctx.lineTo(x + w, y + PADDLE_H / 2);
+  ctx.lineTo(x + w - cut, y + PADDLE_H); ctx.lineTo(x + cut, y + PADDLE_H); ctx.lineTo(x, y + PADDLE_H / 2);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle = "rgba(255,255,255,.85)";
+  ctx.font = "bold 10px Consolas, monospace";
+  ctx.fillText("AT FIELD", x + w / 2 - 26, y + 12);
+}
+function drawBalls() {
+  if (stuck) {                                              // 待机球提示
+    const cx = paddle.x + paddle.w / 2, cy = PADDLE_Y - BALL_R - 2;
+    ctx.beginPath(); ctx.arc(cx, cy, BALL_R, 0, 7);
+    ctx.fillStyle = "#cfe8ff"; ctx.shadowColor = "#74c4ff"; ctx.shadowBlur = 16; ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(255,255,255,.75)";
+    ctx.font = "bold 13px Consolas, monospace";
+    ctx.fillText("空格 / 点击 发射", cx - 58, PADDLE_Y - 34);
+    return;
+  }
+  ctx.shadowColor = pierceT > 0 || berserkT > 0 ? "#ffe066" : "#8fe0ff";
+  ctx.shadowBlur = 16;
+  for (const b of balls) {
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7);
+    ctx.fillStyle = pierceT > 0 || berserkT > 0 ? "#ffe066" : "#ffffff";
+    ctx.fill();
+  }
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(143,224,255,.4)";                   // 尾迹
+  for (let i = 0; i < trail.length; i++) {
+    const t = trail[i], a = i / trail.length;
+    ctx.beginPath(); ctx.arc(t.x, t.y, BALL_R * a * .8, 0, 7);
+    ctx.fillStyle = "rgba(143,224,255," + (a * .22) + ")"; ctx.fill();
+  }
+}
+function drawPowerups() {
+  for (const p of powerups) {
+    const col = p.kind === "w" ? "#70ffb8" : p.kind === "p" ? "#ffe066" : p.kind === "m" ? "#74c4ff" : "#c9a6ff";
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.t * 1.6);
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3, px = Math.cos(a) * 16, py = Math.sin(a) * 16; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.closePath();
+    ctx.fillStyle = "rgba(20,14,40,.85)"; ctx.fill();
+    ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.shadowColor = col; ctx.shadowBlur = 12; ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = col; ctx.font = "bold 15px Consolas, monospace"; ctx.textAlign = "center";
+    ctx.fillText(p.kind.toUpperCase(), p.x, p.y + 5);
+    ctx.textAlign = "left";
+  }
+}
+function drawParts() {
+  for (const p of parts) {
+    ctx.globalAlpha = Math.max(0, p.life / p.max);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawSyncBar() {
+  const bw = 340, bx = (W - bw) / 2, by = H - 24;
+  const berserk = berserkT > 0;
+  ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(bx, by, bw, 10);
+  const g = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+  if (berserk) { g.addColorStop(0, "#ff5a3c"); g.addColorStop(1, "#ffd54a"); }
+  else { g.addColorStop(0, "#74c4ff"); g.addColorStop(1, "#b48cff"); }
+  ctx.fillStyle = g;
+  ctx.fillRect(bx, by, bw * clamp(sync, 0, 100) / 100, 10);
+  ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, 10);
+  ctx.fillStyle = berserk ? "#ff9a80" : "#c9c2ea";
+  ctx.font = "bold 12px Consolas, monospace";
+  ctx.fillText(berserk ? "SYNC " + Math.round(sync) + "% ★ 暴走·贯穿" : "SYNC " + Math.round(sync) + "%", bx, by - 6);
+  let hx = bx + bw + 12;
+  for (let i = 0; i < Math.max(0, lives + 1); i++) {
+    ctx.fillStyle = "#ff5a3c";
+    ctx.fillText("●", hx + i * 13, by + 10);
+  }
+}
+
+/* ================= 布局 ================= */
+function layout() {
+  const wrap = $("stageWrap");
+  const availW = Math.max(260, (wrap.clientWidth || window.innerWidth) - 8);
+  const top = wrap.getBoundingClientRect().top;
+  const availH = Math.max(320, window.innerHeight - top - 40);
+  const scale = Math.min(availW / W, availH / H, 1.3);
+  cv.style.width = Math.floor(W * scale) + "px";
+  cv.style.height = Math.floor(H * scale) + "px";
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function canvasPos(ev) {
+  const r = cv.getBoundingClientRect();
+  return { x: (ev.clientX - r.left) * W / r.width, y: (ev.clientY - r.top) * H / r.height };
+}
+
+/* ================= 主循环 ================= */
+function frame(ts) {
+  rafId = requestAnimationFrame(frame);
+  const dt = Math.min(.05, lastTs ? (ts - lastTs) / 1000 : 0);
+  lastTs = ts;
+  if (!paused && !over) update(dt);
+  draw();
+}
+function startLoop() {
+  if (started) return;
+  started = true;
+  rafId = requestAnimationFrame(frame);
+}
+
+/* ================= HUD / 提示 ================= */
+function refreshHud() {
+  $("scoreStat").querySelector("b").textContent = score;
+  $("levelStat").querySelector("b").textContent = level + "/" + cfg.levels;
+  $("lifeStat").querySelector("b").textContent = "●".repeat(Math.max(0, lives + 1)) + "○".repeat(Math.max(0, cfg.lives - lives));
+  const s = Math.round(sync);
+  $("syncStat").querySelector("b").textContent = s + "%";
+  $("syncStat").classList.toggle("berserk", berserkT > 0);
+}
+function pushDeco() {
+  if (window.__decoSyncRate) window.__decoSyncRate(Math.round(sync * 2.4), berserkT > 0);
+}
+let toastT = 0;
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("show"), 1900);
+}
+let alarmT = 0;
+function alarm(text, sub, bad) {
+  const a = $("alarm");
+  a.className = bad ? "bad go" : "go";
+  a.innerHTML = "<div class='banner'>" + text + "</div>" + (sub ? "<div class='sub'>" + sub + "</div>" : "");
+  clearTimeout(alarmT);
+  alarmT = setTimeout(() => { a.className = ""; }, 2400);
+}
+
+/* ================= 交互 ================= */
+const keys = { left: 0, right: 0 };
+const pointer = { on: false, x: W / 2 };
+window.addEventListener("keydown", e => {
+  if (e.key === "p" || e.key === "P" || e.key === "Escape") { togglePause(); return; }
+  if (e.key === " " || e.key === "Spacebar") { e.preventDefault(); ensureAudio(); launch(); return; }
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { keys.left = 1; e.preventDefault(); }
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { keys.right = 1; e.preventDefault(); }
+});
+window.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = 0;
+  if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = 0;
+});
+cv.addEventListener("pointerdown", e => {
+  ensureAudio();
+  const p = canvasPos(e);
+  pointer.on = true; pointer.x = p.x;
+  if (stuck) launch();
+});
+cv.addEventListener("pointermove", e => { pointer.on = true; pointer.x = canvasPos(e).x; });
+cv.addEventListener("pointerup", () => { pointer.on = false; });
+cv.addEventListener("pointercancel", () => { pointer.on = false; });
+cv.addEventListener("pointerleave", () => { pointer.on = false; });
+document.addEventListener("pointerdown", ensureAudio, { once: true });
+function togglePause() {
+  if (over) return;
+  paused = !paused;
+  $("pauseBtn").textContent = paused ? "▶ 继续" : "⏸ 暂停";
+  if (!paused) lastTs = 0;
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && !over && !paused) { paused = true; $("pauseBtn").textContent = "▶ 继续"; }
+});
+
+/* ================= 启动 / 重开 ================= */
+function newGame() {
+  cfg = DIFFS[diffKey];
+  paddle = { x: W / 2 - cfg.paddleW / 2, w: cfg.paddleW, vx: 0 };
+  level = 1; score = 0; combo = 0; lives = cfg.lives - 1;
+  sync = SYNC.start; berserkT = 0; wideT = 0; pierceT = 0;
+  parts = []; powerups = []; balls = []; trail = []; stuck = true;
+  over = false; victory = false; paused = false;
+  gameTime = 0; flashT = 0; shakeT = 0; decoAcc = 0;
+  $("overlay").classList.remove("show");
+  $("pauseBtn").textContent = "⏸ 暂停";
+  $("diffTag").textContent = cfg.name;
+  loadLevel(); loadBest(); refreshHud(); pushDeco();
+  layout(); lastTs = 0; startLoop();
+}
+document.querySelectorAll(".controls button[data-d]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    ensureAudio();
+    diffKey = btn.dataset.d;
+    document.querySelectorAll(".controls button[data-d]").forEach(b => b.classList.toggle("active", b === btn));
+    newGame();
+    toast(cfg.name + " · " + cfg.levels + " 关装甲区");
+  });
+});
+$("pauseBtn").addEventListener("click", togglePause);
+$("newBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("againBtn").addEventListener("click", () => { ensureAudio(); newGame(); });
+$("helpBtn").addEventListener("click", () => $("helpModal").classList.add("show"));
+$("helpModal").querySelector(".close").addEventListener("click", () => $("helpModal").classList.remove("show"));
+$("helpModal").addEventListener("click", e => { if (e.target === $("helpModal")) $("helpModal").classList.remove("show"); });
+$("modeBtn").addEventListener("click", () => { ensureAudio(); location.href = "index.html"; });
+$("modeBtn2").addEventListener("click", () => { ensureAudio(); location.href = "index.html"; });
+window.addEventListener("resize", layout);
+window.addEventListener("decochange", layout);
+
+document.querySelector('.controls button[data-d="normal"]').classList.add("active");
+newGame();
+</script>
+</body>
+</html>

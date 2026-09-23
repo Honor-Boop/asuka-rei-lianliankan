@@ -205,6 +205,27 @@ T("连续命中 100 次可触发暴走（从 50 起）", () => {
   while (!enterBerserk(s) && n < 1000) { s = syncGainHit(s, false); n++; }
   assert.strictEqual(n, 84, "需 84 次命中（0.6/次，从 50 到 100）");
 });
+T("暴走可达性：按页面帧序（命中 → 先判暴走 → 再衰减）能真正触发", () => {
+  let s = 50, t = 0, berserkAt = null;
+  const frame = (hit) => {
+    if (hit) s = syncGainHit(s, false);
+    if (berserkAt === null && enterBerserk(s)) { berserkAt = t; return; }
+    s = syncDecay(s, 1 / 60, false);
+    t += 1 / 60;
+  };
+  for (let i = 0; i < 120 * 60 && berserkAt === null; i++) frame(i % 12 === 0);   // 每 0.2 秒命中一次
+  assert.ok(berserkAt !== null, "持续命中应在 120 秒内触发暴走");
+  assert.ok(berserkAt < 120, "触发时间应合理，实际 " + berserkAt.toFixed(1) + "s");
+});
+T("顺序回归：若先衰减再判定，则永远触发不了（弹幕射击 v1.5.0 曾因此失效）", () => {
+  let s = 100, ever = false;
+  for (let i = 0; i < 600; i++) {
+    s = syncDecay(s, 1 / 60, false);
+    if (enterBerserk(s)) ever = true;
+    s = syncGainHit(s, false);                             // 增益封顶在恰好 100
+  }
+  assert.ok(!ever, "错误顺序下触发不了");
+});
 T("计分：连击加成上限 2×、暴走翻倍", () => {
   assert.strictEqual(killScore("small", false, 0), 100, "无连击基础分");
   assert.strictEqual(killScore("small", false, 10), 150, "连击 10 → 1.5×");

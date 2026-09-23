@@ -244,6 +244,8 @@
   .mode-opt[data-mode="sudoku"]:hover { border-color: rgba(159,180,255,.6); box-shadow: 0 0 18px rgba(159,180,255,.25); }
   .mode-opt[data-mode="tower"] b { color: #ff6b6b; }
   .mode-opt[data-mode="tower"]:hover { border-color: rgba(255,107,107,.6); box-shadow: 0 0 18px rgba(255,107,107,.28); }
+  .mode-opt[data-mode="breakout"] b { color: #b0ff5c; }
+  .mode-opt[data-mode="breakout"]:hover { border-color: rgba(176,255,92,.6); box-shadow: 0 0 18px rgba(176,255,92,.25); }
   .mode-opt .em-new { color: var(--gold); }
 
   /* ---------- 结果 / 战绩 弹窗 ---------- */
@@ -518,6 +520,11 @@
         <b>使徒来袭</b>
         <span>通道布防拦截使徒<br>四类炮台 · 波次防线战</span>
         <em>策略塔防</em>
+      </button>
+      <button class="diff-opt mode-opt" data-mode="breakout">
+        <b>AT 弹球</b>
+        <span>力场挡板弹射阳电子炮<br>击碎装甲 · 同步率贯穿</span>
+        <em>物理技巧</em>
       </button>
     </div>
     <button id="modeCancel" style="display:none;margin-top:18px;font-family:inherit;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:8px 22px;cursor:pointer">返回当前对局</button>
@@ -1427,6 +1434,7 @@ document.querySelectorAll(".mode-opt").forEach(btn => {
     if (btn.dataset.mode === "match3") { location.href = "match3.html"; return; }
     if (btn.dataset.mode === "shmup") { location.href = "shmup.html"; return; }
     if (btn.dataset.mode === "tower") { location.href = "tower.html"; return; }
+    if (btn.dataset.mode === "breakout") { location.href = "breakout.html"; return; }
     if (diffKey) resumeTimer(); else openDiff(false);
   });
 });
