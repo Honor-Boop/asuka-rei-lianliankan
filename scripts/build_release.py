@@ -71,7 +71,7 @@ def step_copy_assets():
             copied.append(name)
     print("copied:", ", ".join(copied))
     # 校验关键文件在位
-    for need in ("sudoku.html", "spider.html", "shmup.html", "tower.html", "gallery_panel.js", "deco.js", "background.js", "serve.py"):
+    for need in ("sudoku.html", "spider.html", "shmup.html", "tower.html", "breakout.html", "gallery_panel.js", "deco.js", "background.js", "serve.py"):
         p = os.path.join(APP_DIR, need)
         if not os.path.isfile(p):
             raise SystemExit("缺少资源：" + need)
