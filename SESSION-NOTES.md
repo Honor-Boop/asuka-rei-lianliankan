@@ -160,3 +160,25 @@
 - 页面内 `pointer.on` 残留会持续把档板/机体拉回残留指针位置 → 模拟脚本须先 `pointer.on = false`
 - 长流程一律用 `update(dt)` 确定性推进（`document.hidden` 下 rAF 被节流）
 - 复用标签页可能加载旧代码（改配置后务必开新标签页，否则读到旧常量）
+
+---
+
+## 2026-09-24 快照 · 增量 7（v1.5.1 已发版 · 本地与线上同步完成）
+
+- **版本 v1.5.1 发布**（用户指定版本号，非 1.6.0）：本地与线上均已更新，README/SESSION-NOTES 已同步
+  - 四处一致：`serve.py` = 安装包内 = 本机安装目录 = GitHub Release tag = **v1.5.1**
+  - 安装包 `EVA-MiniGames-Setup-v1.5.1.exe` 166,007,057 字节（本地与远端一致）
+  - Release: https://github.com/Honor-Boop/asuka-rei-lianliankan/releases/tag/v1.5.1
+  - 本机安装目录：`shmup.html` 含暴走修复、`breakout.html` 已就位，四个核心页 md5 与项目一致；快捷方式已重建
+- **本版内容**：第 12 个玩法 AT 力场弹球 + **弹幕射击暴走失效修复**（此前线上版本暴走永远不会触发）+ 弹球 4 处修复
+- 远程 main 已同步（本次推送含 serve.py / 构建脚本 / 公告 / ACCEPTANCE / SESSION-NOTES）
+
+**待办**
+1. GitHub 旧 Release（≤ v1.5.0，含 v1.5.1 共 17 个）清理 —— 用户已明确否决，勿再执行
+2. 候选新玩法（用户可随时挑）：2048 / 记忆翻牌 / 数织 Nonogram / 推箱子 / 华容道 / 使徒追击跑酷 /
+   黑白棋 / 21 点 / 找茬 / 节奏打击 / NERV 基地经营
+
+**发版流程备忘（含本轮新增）**
+- 改 `serve.py` VERSION → 写 `scripts/release_notes_v<版本>.md` → `python scripts/build_release.py <版本>`
+  （自动打包 + 同步本机安装 + 重建快捷方式）→ `python scripts/create_release.py <版本>`（创建 Release + 上传安装包）
+- 发版前记得：新玩法页要加入 `scripts/build_release.py` 的关键文件校验清单；删除 dist 里被取代的旧版安装包

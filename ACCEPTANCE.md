@@ -180,3 +180,46 @@
 - 未做发版：v1.6.0 打包与 GitHub Release **未执行**（外向动作，等用户授权）；当前本机安装目录仍是 v1.5.0，因此**弹幕射击的暴走修复尚未到线上版本**
 - 未覆盖：真人手感、真机触屏（仅验 pointer 事件路径）、真实覆盖安装升级
 - 探针环境注意：页面内 `pointer.on` 残留会持续把档板拉回残留指针位置，模拟脚本须先置 false；rAF 在 `document.hidden` 下被节流，长流程一律用 `update(dt)` 确定性推进
+
+---
+
+# 验收报告 · v1.5.1 发版（AT 力场弹球 + 暴走失效修复）（2026-09-24）
+
+## 需求
+用户指令：「版本命名为 1.5.1，本地和线上都更新」——即发版并同时更新本机安装与线上 Release。
+
+## 交付
+- 版本号 `serve.py` → **v1.5.1**；公告 `scripts/release_notes_v1.5.1.md`（1134 字）
+- 构建校验清单加入 `breakout.html`；打包产物 `dist/EVA-MiniGames-Setup-v1.5.1.exe`（166,007,057 字节）
+- GitHub Release v1.5.1 + 安装包上传；本机安装目录与桌面/开始菜单快捷方式同步
+
+## 验收项与证据
+
+### 1. 包内容（zip 内实测，451 项）
+| 检查 | 结果 |
+|---|---|
+| `breakout.html` / `shmup.html` / `tower.html` / `index.html` / `serve.py` 在位 | ✓ 全部在包内 |
+| 测试文件不入包（`*-test.js` 四类抽查） | ✓ 均未入包 |
+| 包内 `serve.py` VERSION | ✓ **v1.5.1** |
+| **弹幕射击暴走修复**已进包 | ✓（判定先于衰减的注释与代码均在） |
+| 弹球同步率修复与配置 | ✓ `brickIdleT` 残局防呆 / `MIN_VX` 保底横速 / 过关数组守卫均在；`decay .3`、收益 `2.4/4.0/7.0` |
+| 大厅接入 | ✓ 含 `data-mode="breakout"` 卡片与 `location.href = "breakout.html"` 路由 |
+
+### 2. 本机安装目录（本地更新）
+- `serve.py` = **v1.5.1**；`breakout.html` / `shmup.html` / `index.html` / `tower.html` 与项目 **md5 逐个一致**
+- 本机安装的 `shmup.html` 确认含暴走修复；`breakout.html` 确认存在
+- 桌面 + 开始菜单快捷方式已重建（启动器指向 `EVA小游戏.vbs`）
+- 本地服务 `/api/version` = **v1.5.1**；index / breakout / shmup / tower 四页 HTTP **200**
+
+### 3. 线上（GitHub Release）
+- 远端 `releases/latest` → **tag v1.5.1**，资产 `EVA-MiniGames-Setup-v1.5.1.exe` 166,007,057 字节（**与本地一致**），状态 uploaded
+- 标签指向提交 `9aad2dcc`（含版本号变更的那次提交）；公告 1134 字，含新玩法与暴走修复说明
+- 升级检测：`api/update-check` → `ok=true current=v1.5.1 latest=v1.5.1 update=false`，公告可正常拉取
+
+### 4. 版本四处一致
+`serve.py` = 安装包内 = 本机安装目录 = GitHub Release tag = **v1.5.1**
+
+## 备注
+- 本机 WDAC 仍拦截无签名 exe，本机入口为桌面 vbs → pywebview；安装包供其他电脑使用
+- GitHub 旧 Release（≤ v1.5.0）按用户要求**保留不清理**
+- 未覆盖：真人手感、真机触屏、真实客户端覆盖安装升级
