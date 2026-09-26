@@ -205,8 +205,8 @@ const $ = id => document.getElementById(id);
 const W = 960, H = 528, TILE = 48, VROWS = 11;
 const TE = 0, TS = 1, TO = 2, TG = 3;                    // 空 / 实心 / 单向平台 / 尖刺
 const CHARS = {
-  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#5a7fd4", suitLight: "#8fb4f0", suitDark: "#33507e", hair: "#c8d8ff", hairDark: "#9fb8e8", number: "00" },
-  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e8552c", suitLight: "#f08050", suitDark: "#a03418", hair: "#d98a4a", hairDark: "#a8622e", number: "02" },
+  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#dfe6f2", suitLight: "#f4f7fc", suitDark: "#5a7fd4", hair: "#cfe0ff", hairDark: "#a4bfe8", eye: "#e0392a", number: "00" },
+  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e0392a", suitLight: "#f0704a", suitDark: "#8c1f12", hair: "#f0a055", hairDark: "#c8702e", eye: "#2a6ee0", number: "02" },
 };
 const DIFFS = {
   easy:   { key: "easy",   name: "見習い",   lives: 3, espMul: .85, time: 240 },
@@ -875,79 +875,126 @@ function drawEnemies() {
 function drawPlayer() {
   if (invulnT > 0 && Math.floor(invulnT * 12) % 2 === 0) return;
   const moving = onGround && Math.abs(vx) > 30;
-  const ph = moving ? Math.sin(runPhase * 2.6) : 0;          // 跑步相位（腿臂反相摆动）
+  const ph = moving ? Math.sin(runPhase * 2.6) : 0;
   const air = !onGround;
+  const breath = moving || air ? 0 : Math.sin(gameTime * 2.2) * .8;   // 待机呼吸
   const swing = moving ? ph * 6 : (air ? 2.5 : 0);
   const knee = moving ? Math.max(0, -ph) * 5 : (air ? 6 : 1);
   ctx.save();
-  ctx.translate(player.x + player.w / 2, player.y);
+  ctx.translate(player.x + player.w / 2, player.y + breath);
   ctx.scale(facing, 1);
-  ctx.fillStyle = "rgba(0,0,0,.3)";                          // 地面影
-  ctx.beginPath(); ctx.ellipse(0, player.h + 3, 14, 4, 0, 0, 7); ctx.fill();
-  if (charKey === "asuka") {                                 // 明日香：脑后长发（画在身体后面）
+  ctx.fillStyle = "rgba(0,0,0,.28)";                                   // 地面影
+  ctx.beginPath(); ctx.ellipse(0, player.h + 3 - breath, 13, 3.6, 0, 0, 7); ctx.fill();
+
+  /* ---- 后层：明日香双马尾 / 绫波发侧 ---- */
+  if (charKey === "asuka") {
     ctx.fillStyle = pilot.hairDark;
-    ctx.beginPath();
-    ctx.moveTo(-1, 3);
-    ctx.quadraticCurveTo(-16, 10, -13, 29 + ph * 2);
-    ctx.quadraticCurveTo(-9, 33, -6, 27);
-    ctx.quadraticCurveTo(-8, 13, -1, 7);
-    ctx.closePath(); ctx.fill();
-  }
-  ctx.lineCap = "round";
-  ctx.strokeStyle = pilot.suitDark; ctx.lineWidth = 6.5;     // 腿：大腿-小腿两段
-  ctx.beginPath(); ctx.moveTo(-3.5, 26); ctx.lineTo(-4 - swing, 33 + knee * .25); ctx.lineTo(-5 - swing * 1.5, 41); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(3.5, 26); ctx.lineTo(4 + swing, 33 + knee * .25); ctx.lineTo(5 + swing * 1.5, 41); ctx.stroke();
-  ctx.fillStyle = "#eef0f8";                                 // 靴
-  ctx.fillRect(-9.5 - swing * 1.5, 39, 9.5, 5.5);
-  ctx.fillRect(1 + swing * 1.5, 39, 9.5, 5.5);
-  ctx.strokeStyle = pilot.suit; ctx.lineWidth = 5;           // 手臂（与腿反相）
-  ctx.beginPath(); ctx.moveTo(-7, 15); ctx.lineTo(-10 - ph * 4, 23 + Math.abs(ph) * 2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(7, 15); ctx.lineTo(10 + ph * 4, 23 + Math.abs(ph) * 2); ctx.stroke();
-  ctx.fillStyle = "#f0d5b8";                                 // 手
-  ctx.beginPath(); ctx.arc(-10 - ph * 4, 24.5 + Math.abs(ph) * 2, 2.6, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.arc(10 + ph * 4, 24.5 + Math.abs(ph) * 2, 2.6, 0, 7); ctx.fill();
-  const g = ctx.createLinearGradient(0, 11, 0, 31);          // 躯干（驾驶服）
-  g.addColorStop(0, pilot.suitLight); g.addColorStop(1, pilot.suit);
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.moveTo(-9, 13); ctx.lineTo(9, 13); ctx.lineTo(10, 21); ctx.lineTo(7, 30); ctx.lineTo(-7, 30); ctx.lineTo(-10, 21);
-  ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = pilot.suitDark; ctx.lineWidth = 1.2; ctx.stroke();
-  ctx.fillStyle = "rgba(255,255,255,.9)";                    // 胸口编号
-  ctx.font = "bold 7px Consolas, monospace"; ctx.textAlign = "center";
-  ctx.fillText(pilot.number, 0, 23.5);
-  ctx.fillStyle = pilot.suitDark;                            // 领口 + 肩甲
-  ctx.fillRect(-6, 11.5, 12, 3);
-  ctx.fillRect(-12.5, 12, 4.5, 6.5);
-  ctx.fillRect(8, 12, 4.5, 6.5);
-  ctx.fillStyle = "#f0d5b8";                                 // 头
-  ctx.beginPath(); ctx.arc(0, 6, 8, 0, 7); ctx.fill();
-  ctx.fillStyle = pilot.hair;                                // 发型（双主角差异化）
-  if (charKey === "rei") {
-    ctx.beginPath();                                         // 绫波：齐耳短发 + 齐刘海
-    ctx.arc(0, 5, 8.6, Math.PI * .86, Math.PI * 2.14);
-    ctx.lineTo(7, 12); ctx.quadraticCurveTo(3, 9, 0, 10.5);
-    ctx.quadraticCurveTo(-4, 9, -7.5, 12);
-    ctx.closePath(); ctx.fill();
-    ctx.fillStyle = pilot.hairDark;
-    ctx.fillRect(-8.4, 9.5, 16.8, 1.6);                      // 发梢定形线
+    for (const sd of [-1, 1]) {                                        // 两束马尾随跑动飘
+      ctx.beginPath();
+      ctx.moveTo(sd * 5, 10);
+      ctx.quadraticCurveTo(sd * 14, 18 + ph * 1.6, sd * 11 - ph * 3, 33);
+      ctx.quadraticCurveTo(sd * 8.5, 36, sd * 6.5, 29);
+      ctx.quadraticCurveTo(sd * 9, 18, sd * 3, 11);
+      ctx.closePath(); ctx.fill();
+    }
   } else {
-    ctx.beginPath();                                         // 明日香：刘海 + A10 神经接口
-    ctx.arc(0, 4.6, 8.4, Math.PI * .9, Math.PI * 2.1);
-    ctx.lineTo(6.5, 9); ctx.quadraticCurveTo(2, 12.5, 0, 9.5);
-    ctx.quadraticCurveTo(-2.5, 12.5, -6.5, 9);
+    ctx.fillStyle = pilot.hairDark;                                    // 绫波：发侧内层
+    ctx.beginPath();
+    ctx.moveTo(-11, 10); ctx.quadraticCurveTo(-13, 20, -10.5, 24);
+    ctx.lineTo(-8, 22); ctx.quadraticCurveTo(-10, 15, -8, 10);
     ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#e8552c";
-    ctx.beginPath(); ctx.ellipse(-6.2, 6.8, 2, 3.1, -.4, 0, 7); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(6.2, 6.8, 2, 3.1, .4, 0, 7); ctx.fill();
-    ctx.strokeStyle = "#ffd9dd"; ctx.lineWidth = .8;
-    ctx.beginPath(); ctx.ellipse(-6.2, 6.8, 2, 3.1, -.4, 0, 7); ctx.stroke();
-    ctx.beginPath(); ctx.ellipse(6.2, 6.8, 2, 3.1, .4, 0, 7); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(11, 10); ctx.quadraticCurveTo(13, 20, 10.5, 24);
+    ctx.lineTo(8, 22); ctx.quadraticCurveTo(10, 15, 8, 10);
+    ctx.closePath(); ctx.fill();
   }
-  ctx.fillStyle = "#1c1430";                                 // 眼（含高光）
-  ctx.beginPath(); ctx.arc(4.4, 6.8, 1.5, 0, 7); ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,.9)";
-  ctx.beginPath(); ctx.arc(4.9, 6.3, .6, 0, 7); ctx.fill();
+
+  /* ---- 腿（两段式 + 靴） ---- */
+  ctx.lineCap = "round";
+  ctx.strokeStyle = pilot.suitDark; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(-3.5, 33); ctx.lineTo(-4 - swing, 37 + knee * .25); ctx.lineTo(-5 - swing * 1.5, 42); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3.5, 33); ctx.lineTo(4 + swing, 37 + knee * .25); ctx.lineTo(5 + swing * 1.5, 42); ctx.stroke();
+  ctx.fillStyle = "#e8ecf4";                                           // 靴
+  ctx.fillRect(-9.5 - swing * 1.5, 40.5, 9.5, 4.5);
+  ctx.fillRect(1 + swing * 1.5, 40.5, 9.5, 4.5);
+  ctx.fillStyle = pilot.suitDark;
+  ctx.fillRect(-9.5 - swing * 1.5, 40.5, 9.5, 1.6);
+  ctx.fillRect(1 + swing * 1.5, 40.5, 9.5, 1.6);
+
+  /* ---- 手臂（与腿反相） ---- */
+  ctx.strokeStyle = pilot.suit; ctx.lineWidth = 4.6;
+  ctx.beginPath(); ctx.moveTo(-7, 27); ctx.lineTo(-10 - ph * 4, 33 + Math.abs(ph) * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(7, 27); ctx.lineTo(10 + ph * 4, 33 + Math.abs(ph) * 2); ctx.stroke();
+  ctx.fillStyle = "#f2ddc4";
+  ctx.beginPath(); ctx.arc(-10 - ph * 4, 34.5 + Math.abs(ph) * 2, 2.4, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(10 + ph * 4, 34.5 + Math.abs(ph) * 2, 2.4, 0, 7); ctx.fill();
+
+  /* ---- 躯干（驾驶服） ---- */
+  const tg = ctx.createLinearGradient(0, 23, 0, 37);
+  tg.addColorStop(0, pilot.suitLight); tg.addColorStop(1, pilot.suit);
+  ctx.fillStyle = tg;
+  ctx.beginPath();
+  ctx.moveTo(-8.5, 24); ctx.quadraticCurveTo(-10.5, 29, -7.5, 36);
+  ctx.lineTo(7.5, 36); ctx.quadraticCurveTo(10.5, 29, 8.5, 24);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = pilot.suitDark; ctx.lineWidth = 1.1; ctx.stroke();
+  ctx.fillStyle = pilot.suitDark;                                      // 肩甲 + 领口 + 腰带
+  ctx.beginPath(); ctx.ellipse(-8.5, 25.5, 3.4, 2.6, -.3, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(8.5, 25.5, 3.4, 2.6, .3, 0, 7); ctx.fill();
+  ctx.fillRect(-5, 22.8, 10, 2.6);
+  ctx.fillRect(-7.5, 33.4, 15, 2.2);
+  ctx.fillStyle = "rgba(255,255,255,.85)";                             // 胸口编号（不随镜像翻转）
+  ctx.font = "bold 6.5px Consolas, monospace"; ctx.textAlign = "center";
+  ctx.save(); ctx.scale(facing, 1); ctx.fillText(pilot.number, 0, 31.5); ctx.restore();
+
+  /* ---- 头（Q 版大比例：脸大露、发盖顶） ---- */
+  const hy = 13 + breath * .3;
+  ctx.fillStyle = "#f2ddc4";                                           // 脖颈
+  ctx.fillRect(-2.4, hy + 9, 4.8, 4);
+  ctx.beginPath(); ctx.arc(0, hy, 11, 0, 7); ctx.fill();               // 脸
+  ctx.fillStyle = pilot.hair;                                          // 发帽 + 鬓发（脸窗露出）
+  ctx.beginPath();
+  ctx.arc(0, hy, 11.6, Math.PI * .96, Math.PI * 2.04);
+  ctx.lineTo(11.6, hy + (charKey === "rei" ? 11 : 8));                 // 鬓发下垂（绫波齐耳/明日香短鬓）
+  ctx.lineTo(8.6, hy + (charKey === "rei" ? 10.5 : 7.5));
+  ctx.quadraticCurveTo(10.4, hy + 2, 10.3, hy - 3.2);                  // 鬓内缘
+  ctx.lineTo(8, hy - .6); ctx.lineTo(5.5, hy - 3); ctx.lineTo(3, hy - .4);   // 齐刘海锯齿
+  ctx.lineTo(.5, hy - 3.2); ctx.lineTo(-2, hy - .4); ctx.lineTo(-4.5, hy - 3);
+  ctx.lineTo(-7, hy - .6); ctx.lineTo(-10.3, hy - 3.2);
+  ctx.quadraticCurveTo(-10.4, hy + 2, -8.6, hy + (charKey === "rei" ? 10.5 : 7.5));
+  ctx.lineTo(-11.6, hy + (charKey === "rei" ? 11 : 8));
+  ctx.closePath(); ctx.fill();
+  if (charKey === "asuka") {                                           // 明日香：A10 神经接口（鬓上）
+    ctx.fillStyle = "#e0392a";
+    for (const sd of [-1, 1]) {
+      ctx.beginPath(); ctx.ellipse(sd * 10, hy + 3.5, 1.8, 3.2, sd * .3, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#ffd9dd"; ctx.lineWidth = .8;
+      ctx.beginPath(); ctx.ellipse(sd * 10, hy + 3.5, 1.8, 3.2, sd * .3, 0, 7); ctx.stroke();
+    }
+  }
+  /* ---- 脸部：双目大眼（远小近大）+ 嘴 + 腮红 ---- */
+  const ex = hy + 2.8;
+  ctx.fillStyle = "#fff";                                              // 远眼
+  ctx.beginPath(); ctx.ellipse(-2.4, ex, 2.1, 2.9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = pilot.eye;
+  ctx.beginPath(); ctx.ellipse(-2.2, ex + .3, 1.4, 2.1, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#141024";
+  ctx.beginPath(); ctx.arc(-2, ex + .5, .8, 0, 7); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.95)";
+  ctx.beginPath(); ctx.arc(-2.7, ex - .6, .6, 0, 7); ctx.fill();
+  ctx.fillStyle = "#fff";                                              // 近眼
+  ctx.beginPath(); ctx.ellipse(5.4, ex, 2.6, 3.5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = pilot.eye;
+  ctx.beginPath(); ctx.ellipse(5.7, ex + .3, 1.7, 2.5, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = "#141024";
+  ctx.beginPath(); ctx.arc(5.9, ex + .6, 1, 0, 7); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.95)";
+  ctx.beginPath(); ctx.arc(5.2, ex - .8, .75, 0, 7); ctx.fill();
+  ctx.strokeStyle = "#c88a6a"; ctx.lineWidth = .9;                     // 嘴
+  ctx.beginPath(); ctx.moveTo(5.6, hy + 7.6); ctx.lineTo(8, hy + 7.3); ctx.stroke();
+  ctx.fillStyle = "rgba(240,140,120,.3)";                              // 腮红
+  ctx.beginPath(); ctx.ellipse(1.4, hy + 5.8, 2, 1.1, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-6.4, hy + 5.8, 2, 1.1, 0, 0, 7); ctx.fill();
   ctx.textAlign = "left";
   ctx.restore();
 }

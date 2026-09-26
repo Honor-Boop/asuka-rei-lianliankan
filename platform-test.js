@@ -20,8 +20,8 @@ const LEVELS = extractLevels();
 const W = 960, H = 528, TILE = 48, VROWS = 11;
 const TE = 0, TS = 1, TO = 2, TG = 3;
 const CHARS = {
-  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#5a7fd4", suitLight: "#8fb4f0", suitDark: "#33507e", hair: "#c8d8ff", hairDark: "#9fb8e8", number: "00" },
-  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e8552c", suitLight: "#f08050", suitDark: "#a03418", hair: "#d98a4a", hairDark: "#a8622e", number: "02" },
+  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#dfe6f2", suitLight: "#f4f7fc", suitDark: "#5a7fd4", hair: "#cfe0ff", hairDark: "#a4bfe8", eye: "#e0392a", number: "00" },
+  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e0392a", suitLight: "#f0704a", suitDark: "#8c1f12", hair: "#f0a055", hairDark: "#c8702e", eye: "#2a6ee0", number: "02" },
 };
 const DIFFS = {
   easy:   { key: "easy",   name: "見習い",   lives: 3, espMul: .85, time: 240 },
