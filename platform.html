@@ -933,7 +933,7 @@ function drawPlayer() {
   ctx.strokeStyle = pilot.suit; ctx.lineWidth = 4.6;
   ctx.beginPath(); ctx.moveTo(-7, 26.5); ctx.quadraticCurveTo(-10.5, 30, -9.5 - ph * 3, 33); ctx.lineTo(-10.5 - ph * 4, 35.5 + Math.abs(ph) * 1.5); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(7, 26.5); ctx.quadraticCurveTo(10.5, 30, 9.5 + ph * 3, 33); ctx.lineTo(10.5 + ph * 4, 35.5 + Math.abs(ph) * 1.5); ctx.stroke();
-  ctx.fillStyle = "#f2ddc4";
+  ctx.fillStyle = "#f5e3d4";
   ctx.beginPath(); ctx.arc(-10.5 - ph * 4, 37 + Math.abs(ph) * 1.5, 2.4, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.arc(10.5 + ph * 4, 37 + Math.abs(ph) * 1.5, 2.4, 0, 7); ctx.fill();
 
@@ -973,25 +973,35 @@ function drawPlayer() {
 
   /* ---- 头（Q 版 + 勾线 + 发光） ---- */
   const hy = 13 + breath * .3;
-  ctx.fillStyle = "#f2ddc4";                                             // 脖颈
+  ctx.fillStyle = "#f5e3d4";                                             // 脖颈
   ctx.fillRect(-2.4, hy + 9, 4.8, 4);
   ctx.fillStyle = "rgba(0,0,0,.12)";                                     // 下颌影
   ctx.beginPath(); ctx.ellipse(0, hy + 10.4, 6.5, 1.6, 0, 0, 7); ctx.fill();
-  ctx.beginPath(); ctx.arc(0, hy, 11, 0, 7); ctx.fill();                 // 脸
-  ctx.fillStyle = pilot.hair;                                            // 发帽 + 鬓发
+  ctx.fillStyle = "#f5e3d4";                                            // 脸（必须重设：上面是半透明黑）
+  ctx.beginPath(); ctx.arc(0, hy, 11, 0, 7); ctx.fill();
+  ctx.fillStyle = pilot.hair;                                            // 发帽（上半圆，绝不含脸部）
   ctx.beginPath();
-  ctx.arc(0, hy, 11.6, Math.PI * .96, Math.PI * 2.04);
-  ctx.lineTo(11.6, hy + (charKey === "rei" ? 11 : 8));
-  ctx.lineTo(8.6, hy + (charKey === "rei" ? 10.5 : 7.5));
-  ctx.quadraticCurveTo(10.4, hy + 2, 10.3, hy - 3.2);
-  ctx.lineTo(8, hy - .6); ctx.lineTo(5.5, hy - 3); ctx.lineTo(3, hy - .4);
-  ctx.lineTo(.5, hy - 3.2); ctx.lineTo(-2, hy - .4); ctx.lineTo(-4.5, hy - 3);
-  ctx.lineTo(-7, hy - .6); ctx.lineTo(-10.3, hy - 3.2);
-  ctx.quadraticCurveTo(-10.4, hy + 2, -8.6, hy + (charKey === "rei" ? 10.5 : 7.5));
-  ctx.lineTo(-11.6, hy + (charKey === "rei" ? 11 : 8));
+  ctx.arc(0, hy, 11.6, Math.PI, Math.PI * 2);
   ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = pilot.hairDark; ctx.lineWidth = 1;                   // 发勾线
-  ctx.beginPath(); ctx.arc(0, hy, 11.6, Math.PI * .96, Math.PI * 2.04); ctx.stroke();
+  ctx.beginPath();                                                       // 锯齿刘海条（帽盖下缘）
+  ctx.moveTo(-11.6, hy - 6.5);
+  ctx.lineTo(11.6, hy - 6.5);
+  ctx.lineTo(11.6, hy - 2.4);
+  ctx.lineTo(8, hy - .8); ctx.lineTo(5.5, hy - 3.8); ctx.lineTo(3, hy - .8);
+  ctx.lineTo(.5, hy - 4); ctx.lineTo(-2, hy - .8); ctx.lineTo(-4.5, hy - 3.8);
+  ctx.lineTo(-7, hy - .8); ctx.lineTo(-10.3, hy - 3.8); ctx.lineTo(-11.6, hy - 2.4);
+  ctx.closePath(); ctx.fill();
+  const lockBot = charKey === "rei" ? 10.5 : 7.5;                        // 侧鬓（两条独立小面）
+  for (const sd of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(sd * 10.4, hy - 3);
+    ctx.quadraticCurveTo(sd * 12.4, hy + 4, sd * 11.4, hy + lockBot);
+    ctx.lineTo(sd * 8.2, hy + lockBot - 1);
+    ctx.quadraticCurveTo(sd * 10.2, hy + 1, sd * 9.9, hy - 2.6);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.strokeStyle = pilot.hairDark; ctx.lineWidth = 1;                   // 帽盖勾线
+  ctx.beginPath(); ctx.arc(0, hy, 11.6, Math.PI, Math.PI * 2); ctx.stroke();
   ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 1.8;         // 发光带
   ctx.beginPath(); ctx.arc(0, hy - .6, 9.2, -2.5, -1.2); ctx.stroke();
   ctx.strokeStyle = "rgba(0,0,0,.14)"; ctx.lineWidth = .7;               // 发丝线
@@ -1012,24 +1022,24 @@ function drawPlayer() {
     ctx.fillStyle = "#fff";
     ctx.beginPath(); ctx.ellipse(cx, ex, rw, rh, 0, 0, 7); ctx.fill();
     ctx.fillStyle = pilot.eye;
-    ctx.beginPath(); ctx.ellipse(cx + .25, ex + .3, rw * .68, rh * .74, 0, 0, 7); ctx.fill();
-    ctx.fillStyle = "rgba(0,0,0,.3)";                                    // 虹膜上暗（深度）
-    ctx.beginPath(); ctx.ellipse(cx + .25, ex - rh * .32, rw * .62, rh * .4, 0, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + .15, ex + .2, rw * .66, rh * .68, 0, 0, 7); ctx.fill();
     ctx.fillStyle = "#141024";
-    ctx.beginPath(); ctx.arc(cx + .4, ex + .5, rh * .28, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + .25, ex + .35, rh * .22, 0, 7); ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,.95)";
-    ctx.beginPath(); ctx.arc(cx - rw * .25, ex - rh * .35, rw * .3, 0, 7); ctx.fill();
-    ctx.strokeStyle = "#1c1430"; ctx.lineWidth = 1;                      // 睫线
-    ctx.beginPath(); ctx.arc(cx, ex - .4, rw + .3, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx - rw * .18, ex - rh * .28, rw * .36, 0, 7); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.6)";
+    ctx.beginPath(); ctx.arc(cx + rw * .15, ex + rh * .25, rw * .18, 0, 7); ctx.fill();
+    ctx.strokeStyle = "rgba(28,20,48,.5)"; ctx.lineWidth = .55;          // 细睫线
+    ctx.beginPath(); ctx.arc(cx, ex - .3, rw + .15, Math.PI * 1.12, Math.PI * 1.88); ctx.stroke();
   };
-  eye(-2.4, 2.1, 2.9);
-  eye(5.4, 2.6, 3.5);
+  eye(-2.4, 1.6, 2.2);
+  eye(5.4, 2, 2.7);
   ctx.strokeStyle = pilot.hairDark; ctx.lineWidth = .9;                  // 眉
-  ctx.beginPath(); ctx.moveTo(-4, hy - 1.1); ctx.lineTo(-.8, hy - 1.5); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(3.6, hy - 1.5); ctx.lineTo(7.6, hy - 1.1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-4, hy - .2); ctx.lineTo(-.8, hy - .6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3.6, hy - .6); ctx.lineTo(7.6, hy - .2); ctx.stroke();
   ctx.strokeStyle = "#c88a6a"; ctx.lineWidth = .9;                       // 嘴
   ctx.beginPath(); ctx.moveTo(5.4, hy + 7.6); ctx.quadraticCurveTo(6.8, hy + 8.1, 8, hy + 7.3); ctx.stroke();
-  ctx.fillStyle = "rgba(240,140,120,.3)";                                // 腮红
+  ctx.fillStyle = "rgba(240,140,120,.22)";                                // 腮红
   ctx.beginPath(); ctx.ellipse(1.4, hy + 5.8, 2, 1.1, 0, 0, 7); ctx.fill();
   ctx.beginPath(); ctx.ellipse(-6.4, hy + 5.8, 2, 1.1, 0, 0, 7); ctx.fill();
   ctx.textAlign = "left";
