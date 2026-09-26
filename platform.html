@@ -794,8 +794,9 @@ function buildTileCache() {
 }
 function drawTiles() {
   if (!tileCv) return;
-  const sx = Math.round(cam * tileDpr);
-  ctx.drawImage(tileCv, sx, 0, Math.round(W * tileDpr), Math.round(H * tileDpr), 0, 0, W, H);
+  // 整层按世界坐标绘制（外层 translate(-cam) 已负责开窗）——
+  // 若在此再做源矩形开窗会与 translate 叠加成 2 倍位移，砖块层会滑出屏幕
+  ctx.drawImage(tileCv, 0, 0, map.cols * TILE, H);
 }
 function drawGoal() {
   const x = map.goal.c * TILE + TILE / 2, yBase = (map.goal.r + 1) * TILE;
