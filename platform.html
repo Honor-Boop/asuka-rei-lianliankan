@@ -205,8 +205,8 @@ const $ = id => document.getElementById(id);
 const W = 960, H = 528, TILE = 48, VROWS = 11;
 const TE = 0, TS = 1, TO = 2, TG = 3;                    // 空 / 实心 / 单向平台 / 尖刺
 const CHARS = {
-  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#5a7fd4", hair: "#c8d8ff" },
-  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e8552c", hair: "#d98a4a" },
+  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#5a7fd4", suitLight: "#8fb4f0", suitDark: "#33507e", hair: "#c8d8ff", hairDark: "#9fb8e8", number: "00" },
+  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e8552c", suitLight: "#f08050", suitDark: "#a03418", hair: "#d98a4a", hairDark: "#a8622e", number: "02" },
 };
 const DIFFS = {
   easy:   { key: "easy",   name: "見習い",   lives: 3, espMul: .85, time: 240 },
@@ -215,7 +215,7 @@ const DIFFS = {
 };
 const PHYS = {
   gravity: 2300, holdGravity: 1600, maxFall: 1200,
-  accel: 2600, friction: 2200, airAccel: 1800,
+  accel: 2600, friction: 2200, airAccel: 2200,
   coyote: .08, buffer: .1, stompBounce: 560, hurtInvuln: 1.5,
   knockX: 260, knockY: 330,
 };
@@ -409,9 +409,13 @@ function walkerStep(w, dt, grid, cols, rows, speed) {
 function flyerPos(x0, y0, t, phase) {
   return { x: x0 + Math.sin(t * .9 + phase) * FLYER.ampX, y: y0 + Math.sin(t * 1.8 + phase) * FLYER.ampY };
 }
-/* 摄像机：跟随并带朝向前瞻，钳制在关卡边界 */
-function cameraX(px, facing, levelPxW) {
-  return clamp(px - W / 2 + (facing > 0 ? 110 : -70), 0, Math.max(0, levelPxW - W));
+/* 摄像机：前瞻量由速度决定（转向时平滑过渡，不再瞬移），跟随用指数平滑 */
+function cameraTargetX(px, vx, levelPxW) {
+  return clamp(px - W / 2 + clamp(vx * .3, -100, 100), 0, Math.max(0, levelPxW - W));
+}
+function cameraFollow(cam, target, dt) {
+  if (Math.abs(target - cam) > 400) return target;      // 换关大跳变直接吸附
+  return cam + (target - cam) * Math.min(1, dt * 10);
 }
 function levelBonus(timeLeft) { return CLEAR_BASE + Math.max(0, Math.round(timeLeft)) * TIME_BONUS; }
 function stompScore(chain) { return STOMP_BASE + (chain - 1) * 50; }
@@ -468,7 +472,8 @@ function loadLevel(n) {
   flyers = map.flyers.map((p, i) => ({ x0: p.c * TILE + TILE / 2, y0: p.r * TILE + TILE / 2, phase: i * 1.7, x: p.c * TILE + TILE / 2, y: p.r * TILE + TILE / 2, dead: false }));
   batts = map.batteries.map(p => ({ x: p.c * TILE + TILE / 2, y: p.r * TILE + TILE / 2, got: false }));
   parts = [];
-  cam = 0;
+  cam = cameraTargetX(player.x + player.w / 2, 0, map.cols * TILE);
+  buildTileCache();
   refreshHud();
 }
 function newGame() {
@@ -501,8 +506,7 @@ function update(dt) {
   if (flashT > 0) flashT -= dt;
   decoAcc += dt;
   if (decoAcc > .4) { decoAcc = 0; pushDeco(); }
-  const levelPx = map.cols * TILE;
-  cam = cameraX(player.x + player.w / 2, facing, levelPx);
+  cam = cameraFollow(cam, cameraTargetX(player.x + player.w / 2, vx, map.cols * TILE), dt);
 }
 function updatePlayer(dt) {
   const dir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
@@ -744,41 +748,54 @@ function drawBG() {
   ctx.font = "bold 11px Consolas, monospace";
   ctx.fillText("TOKYO-3 · 第 " + level + " 防区", 14, 13);
 }
-function drawTiles() {
-  const c0 = Math.max(0, Math.floor(cam / TILE) - 1), c1 = Math.min(map.cols - 1, Math.ceil((cam + W) / TILE) + 1);
-  for (let r = 0; r < map.rows; r++) for (let c = c0; c <= c1; c++) {
-    const t = map.grid[r * map.cols + c];
+let tileCv = null, tileDpr = 0;
+function buildTileCache() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  tileDpr = dpr;
+  tileCv = document.createElement("canvas");
+  tileCv.width = Math.ceil(map.cols * TILE * dpr);
+  tileCv.height = Math.ceil(H * dpr);
+  const c = tileCv.getContext("2d");
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const c0 = 0, c1 = map.cols - 1;
+  for (let r = 0; r < map.rows; r++) for (let cI = c0; cI <= c1; cI++) {
+    const t = map.grid[r * map.cols + cI];
     if (t === TE) continue;
-    const x = c * TILE, y = r * TILE;
+    const x = cI * TILE, y = r * TILE;
     if (t === TS) {
-      const g = ctx.createLinearGradient(x, y, x, y + TILE);
+      const g = c.createLinearGradient(x, y, x, y + TILE);
       g.addColorStop(0, "#4a3f7a"); g.addColorStop(1, "#241c48");
-      ctx.fillStyle = g;
-      ctx.fillRect(x, y, TILE, TILE);
-      ctx.strokeStyle = "rgba(255,255,255,.14)"; ctx.lineWidth = 1;
-      ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
-      if (!solidAt(map.grid, map.cols, map.rows, c, r - 1)) {   // 顶面警示条
-        ctx.fillStyle = "rgba(245,197,24,.4)";
-        ctx.fillRect(x, y, TILE, 4);
+      c.fillStyle = g;
+      c.fillRect(x, y, TILE, TILE);
+      c.strokeStyle = "rgba(255,255,255,.14)"; c.lineWidth = 1;
+      c.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+      if (!solidAt(map.grid, map.cols, map.rows, cI, r - 1)) {   // 顶面警示条
+        c.fillStyle = "rgba(245,197,24,.4)";
+        c.fillRect(x, y, TILE, 4);
       }
     } else if (t === TO) {
-      ctx.fillStyle = "#2c3a5e";
-      ctx.fillRect(x, y + 6, TILE, 10);
-      ctx.fillStyle = "rgba(143,224,255,.8)";
-      ctx.fillRect(x, y + 6, TILE, 2.5);
-      ctx.fillStyle = "rgba(255,255,255,.25)";
-      for (let i = 0; i < 3; i++) ctx.fillRect(x + 6 + i * 16, y + 11, 8, 2);
+      c.fillStyle = "#2c3a5e";
+      c.fillRect(x, y + 6, TILE, 10);
+      c.fillStyle = "rgba(143,224,255,.8)";
+      c.fillRect(x, y + 6, TILE, 2.5);
+      c.fillStyle = "rgba(255,255,255,.25)";
+      for (let i = 0; i < 3; i++) c.fillRect(x + 6 + i * 16, y + 11, 8, 2);
     } else if (t === TG) {
-      ctx.fillStyle = "rgba(255,90,60,.28)";
-      ctx.beginPath();
-      ctx.moveTo(x + 6, y + TILE); ctx.lineTo(x + TILE / 2, y + 8); ctx.lineTo(x + TILE - 6, y + TILE);
-      ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = "#ff5a3c"; ctx.lineWidth = 2.4;
-      ctx.stroke();
-      ctx.fillStyle = "rgba(255,90,60,.9)";
-      for (let i = 0; i < 3; i++) ctx.fillRect(x + TILE / 2 - 2, y + 14 + i * 11, 4, 6);
+      c.fillStyle = "rgba(255,90,60,.28)";
+      c.beginPath();
+      c.moveTo(x + 6, y + TILE); c.lineTo(x + TILE / 2, y + 8); c.lineTo(x + TILE - 6, y + TILE);
+      c.closePath(); c.fill();
+      c.strokeStyle = "#ff5a3c"; c.lineWidth = 2.4;
+      c.stroke();
+      c.fillStyle = "rgba(255,90,60,.9)";
+      for (let i = 0; i < 3; i++) c.fillRect(x + TILE / 2 - 2, y + 14 + i * 11, 4, 6);
     }
   }
+}
+function drawTiles() {
+  if (!tileCv) return;
+  const sx = Math.round(cam * tileDpr);
+  ctx.drawImage(tileCv, sx, 0, Math.round(W * tileDpr), Math.round(H * tileDpr), 0, 0, W, H);
 }
 function drawGoal() {
   const x = map.goal.c * TILE + TILE / 2, yBase = (map.goal.r + 1) * TILE;
@@ -855,33 +872,82 @@ function drawEnemies() {
   }
 }
 function drawPlayer() {
-  const blink = invulnT > 0 && Math.floor(invulnT * 12) % 2 === 0;
-  if (blink) return;
-  const x = player.x, y = player.y;
-  const legSwing = onGround && Math.abs(vx) > 30 ? Math.sin(runPhase * 2.4) * 6 : (onGround ? 0 : 4);
+  if (invulnT > 0 && Math.floor(invulnT * 12) % 2 === 0) return;
+  const moving = onGround && Math.abs(vx) > 30;
+  const ph = moving ? Math.sin(runPhase * 2.6) : 0;          // 跑步相位（腿臂反相摆动）
+  const air = !onGround;
+  const swing = moving ? ph * 6 : (air ? 2.5 : 0);
+  const knee = moving ? Math.max(0, -ph) * 5 : (air ? 6 : 1);
   ctx.save();
-  ctx.translate(x + player.w / 2, y);
+  ctx.translate(player.x + player.w / 2, player.y);
   ctx.scale(facing, 1);
-  ctx.fillStyle = "rgba(0,0,0,.3)";                        // 影
-  ctx.beginPath(); ctx.ellipse(0, player.h + 3, 13, 4, 0, 0, 7); ctx.fill();
-  ctx.fillStyle = pilot.suit;                              // 腿
-  ctx.fillRect(-9, player.h - 16, 7, 16 + legSwing * .4);
-  ctx.fillRect(3, player.h - 16, 7, 16 - legSwing * .4);
-  ctx.fillStyle = pilot.suit;                              // 躯干
-  ctx.fillRect(-10, 12, 20, 18);
-  ctx.fillStyle = "rgba(255,255,255,.35)";
-  ctx.fillRect(-10, 12, 20, 4);
-  ctx.strokeStyle = "#0e2a44"; ctx.lineWidth = 1.4;
-  ctx.strokeRect(-10, 12, 20, 18);
-  ctx.fillStyle = "#f0d5b8";                               // 头
-  ctx.beginPath(); ctx.arc(0, 6, 8, 0, 7); ctx.fill();
-  ctx.fillStyle = pilot.hair;                              // 发
+  ctx.fillStyle = "rgba(0,0,0,.3)";                          // 地面影
+  ctx.beginPath(); ctx.ellipse(0, player.h + 3, 14, 4, 0, 0, 7); ctx.fill();
+  if (charKey === "asuka") {                                 // 明日香：脑后长发（画在身体后面）
+    ctx.fillStyle = pilot.hairDark;
+    ctx.beginPath();
+    ctx.moveTo(-1, 3);
+    ctx.quadraticCurveTo(-16, 10, -13, 29 + ph * 2);
+    ctx.quadraticCurveTo(-9, 33, -6, 27);
+    ctx.quadraticCurveTo(-8, 13, -1, 7);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.lineCap = "round";
+  ctx.strokeStyle = pilot.suitDark; ctx.lineWidth = 6.5;     // 腿：大腿-小腿两段
+  ctx.beginPath(); ctx.moveTo(-3.5, 26); ctx.lineTo(-4 - swing, 33 + knee * .25); ctx.lineTo(-5 - swing * 1.5, 41); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3.5, 26); ctx.lineTo(4 + swing, 33 + knee * .25); ctx.lineTo(5 + swing * 1.5, 41); ctx.stroke();
+  ctx.fillStyle = "#eef0f8";                                 // 靴
+  ctx.fillRect(-9.5 - swing * 1.5, 39, 9.5, 5.5);
+  ctx.fillRect(1 + swing * 1.5, 39, 9.5, 5.5);
+  ctx.strokeStyle = pilot.suit; ctx.lineWidth = 5;           // 手臂（与腿反相）
+  ctx.beginPath(); ctx.moveTo(-7, 15); ctx.lineTo(-10 - ph * 4, 23 + Math.abs(ph) * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(7, 15); ctx.lineTo(10 + ph * 4, 23 + Math.abs(ph) * 2); ctx.stroke();
+  ctx.fillStyle = "#f0d5b8";                                 // 手
+  ctx.beginPath(); ctx.arc(-10 - ph * 4, 24.5 + Math.abs(ph) * 2, 2.6, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.arc(10 + ph * 4, 24.5 + Math.abs(ph) * 2, 2.6, 0, 7); ctx.fill();
+  const g = ctx.createLinearGradient(0, 11, 0, 31);          // 躯干（驾驶服）
+  g.addColorStop(0, pilot.suitLight); g.addColorStop(1, pilot.suit);
+  ctx.fillStyle = g;
   ctx.beginPath();
-  ctx.arc(0, 4, 8.4, Math.PI * .95, Math.PI * 2.08);
-  ctx.lineTo(-8, 10); ctx.lineTo(8, 10);
+  ctx.moveTo(-9, 13); ctx.lineTo(9, 13); ctx.lineTo(10, 21); ctx.lineTo(7, 30); ctx.lineTo(-7, 30); ctx.lineTo(-10, 21);
   ctx.closePath(); ctx.fill();
-  ctx.fillStyle = "#c8102e";                               // 眼
-  ctx.fillRect(3, 5, 3, 2.4);
+  ctx.strokeStyle = pilot.suitDark; ctx.lineWidth = 1.2; ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,.9)";                    // 胸口编号
+  ctx.font = "bold 7px Consolas, monospace"; ctx.textAlign = "center";
+  ctx.fillText(pilot.number, 0, 23.5);
+  ctx.fillStyle = pilot.suitDark;                            // 领口 + 肩甲
+  ctx.fillRect(-6, 11.5, 12, 3);
+  ctx.fillRect(-12.5, 12, 4.5, 6.5);
+  ctx.fillRect(8, 12, 4.5, 6.5);
+  ctx.fillStyle = "#f0d5b8";                                 // 头
+  ctx.beginPath(); ctx.arc(0, 6, 8, 0, 7); ctx.fill();
+  ctx.fillStyle = pilot.hair;                                // 发型（双主角差异化）
+  if (charKey === "rei") {
+    ctx.beginPath();                                         // 绫波：齐耳短发 + 齐刘海
+    ctx.arc(0, 5, 8.6, Math.PI * .86, Math.PI * 2.14);
+    ctx.lineTo(7, 12); ctx.quadraticCurveTo(3, 9, 0, 10.5);
+    ctx.quadraticCurveTo(-4, 9, -7.5, 12);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = pilot.hairDark;
+    ctx.fillRect(-8.4, 9.5, 16.8, 1.6);                      // 发梢定形线
+  } else {
+    ctx.beginPath();                                         // 明日香：刘海 + A10 神经接口
+    ctx.arc(0, 4.6, 8.4, Math.PI * .9, Math.PI * 2.1);
+    ctx.lineTo(6.5, 9); ctx.quadraticCurveTo(2, 12.5, 0, 9.5);
+    ctx.quadraticCurveTo(-2.5, 12.5, -6.5, 9);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#e8552c";
+    ctx.beginPath(); ctx.ellipse(-6.2, 6.8, 2, 3.1, -.4, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6.2, 6.8, 2, 3.1, .4, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#ffd9dd"; ctx.lineWidth = .8;
+    ctx.beginPath(); ctx.ellipse(-6.2, 6.8, 2, 3.1, -.4, 0, 7); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(6.2, 6.8, 2, 3.1, .4, 0, 7); ctx.stroke();
+  }
+  ctx.fillStyle = "#1c1430";                                 // 眼（含高光）
+  ctx.beginPath(); ctx.arc(4.4, 6.8, 1.5, 0, 7); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.9)";
+  ctx.beginPath(); ctx.arc(4.9, 6.3, .6, 0, 7); ctx.fill();
+  ctx.textAlign = "left";
   ctx.restore();
 }
 function drawParts() {
@@ -905,14 +971,22 @@ function layout() {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (map && tileDpr !== dpr) buildTileCache();
 }
 
 /* ================= 主循环 ================= */
+let acc = 0;
 function frame(ts) {
   rafId = requestAnimationFrame(frame);
   const dt = Math.min(.05, lastTs ? (ts - lastTs) / 1000 : 0);
   lastTs = ts;
-  if (!paused && !over) update(dt);
+  if (!paused && !over) {
+    acc += dt;
+    const STEP = 1 / 120;
+    let n = 0;
+    while (acc >= STEP && n < 6) { update(STEP); acc -= STEP; n++; }
+    if (n === 6) acc = 0;                                // 防死亡螺旋
+  }
   draw();
 }
 function startLoop() {

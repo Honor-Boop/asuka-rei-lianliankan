@@ -20,8 +20,8 @@ const LEVELS = extractLevels();
 const W = 960, H = 528, TILE = 48, VROWS = 11;
 const TE = 0, TS = 1, TO = 2, TG = 3;
 const CHARS = {
-  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#5a7fd4", hair: "#c8d8ff" },
-  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e8552c", hair: "#d98a4a" },
+  rei:   { key: "rei",   name: "绫波",   run: 320, jump: 880, suit: "#5a7fd4", suitLight: "#8fb4f0", suitDark: "#33507e", hair: "#c8d8ff", hairDark: "#9fb8e8", number: "00" },
+  asuka: { key: "asuka", name: "明日香", run: 360, jump: 830, suit: "#e8552c", suitLight: "#f08050", suitDark: "#a03418", hair: "#d98a4a", hairDark: "#a8622e", number: "02" },
 };
 const DIFFS = {
   easy:   { key: "easy",   name: "見習い",   lives: 3, espMul: .85, time: 240 },
@@ -30,7 +30,7 @@ const DIFFS = {
 };
 const PHYS = {
   gravity: 2300, holdGravity: 1600, maxFall: 1200,
-  accel: 2600, friction: 2200, airAccel: 1800,
+  accel: 2600, friction: 2200, airAccel: 2200,
   coyote: .08, buffer: .1, stompBounce: 560, hurtInvuln: 1.5,
   knockX: 260, knockY: 330,
 };
@@ -133,8 +133,12 @@ function flyerPos(x0, y0, t, phase) {
   return { x: x0 + Math.sin(t * .9 + phase) * FLYER.ampX, y: y0 + Math.sin(t * 1.8 + phase) * FLYER.ampY };
 }
 const FLYER = { w: 40, h: 26, ampX: 70, ampY: 24 };
-function cameraX(px, facing, levelPxW) {
-  return clamp(px - W / 2 + (facing > 0 ? 110 : -70), 0, Math.max(0, levelPxW - W));
+function cameraTargetX(px, vx, levelPxW) {
+  return clamp(px - W / 2 + clamp(vx * .3, -100, 100), 0, Math.max(0, levelPxW - W));
+}
+function cameraFollow(cam, target, dt) {
+  if (Math.abs(target - cam) > 400) return target;
+  return cam + (target - cam) * Math.min(1, dt * 10);
 }
 function levelBonus(timeLeft) { return CLEAR_BASE + Math.max(0, Math.round(timeLeft)) * TIME_BONUS; }
 function stompScore(chain) { return STOMP_BASE + (chain - 1) * 50; }
@@ -374,12 +378,24 @@ T("飞行使徒轨道：有界正弦，参数化可复现", () => {
 });
 
 /* ---------- 摄像机 / 计分 / 难度 ---------- */
-T("摄像机：跟随 + 前瞻，两端钳制", () => {
+T("摄像机：目标随速度前瞻（转向平滑过渡），两端钳制", () => {
   const levelPx = 64 * TILE;
-  assert.strictEqual(cameraX(100, 1, levelPx), 0, "左端钳制");
-  assert.strictEqual(cameraX(64 * TILE, 1, levelPx), levelPx - W, "右端钳制");
-  const mid = cameraX(2000, 1, levelPx), midL = cameraX(2000, -1, levelPx);
-  assert.ok(mid - midL === 180, "朝向前瞻差 180px");
+  assert.strictEqual(cameraTargetX(100, 0, levelPx), 0, "左端钳制");
+  assert.strictEqual(cameraTargetX(64 * TILE, 0, levelPx), levelPx - W, "右端钳制");
+  const fwd = cameraTargetX(2000, 320, levelPx), back = cameraTargetX(2000, -320, levelPx);
+  assert.ok(Math.abs((fwd - back) - 192) < 1e-9, "速度前瞻差 192px（±96 = 320×0.3）");
+  assert.ok(Math.abs(cameraTargetX(2000, 9999, levelPx) - cameraTargetX(2000, 340, levelPx)) < 1e-9, "前瞻封顶 ±100");
+});
+T("摄像机跟随：指数平滑收敛；换关大跳变直接吸附", () => {
+  let cam = 0;
+  cam = cameraFollow(cam, 200, 1 / 60);
+  assert.ok(cam > 0 && cam < 200, "向目标平滑推进，实际 " + cam.toFixed(1));
+  for (let i = 0; i < 600; i++) cam = cameraFollow(cam, 200, 1 / 60);
+  assert.ok(Math.abs(cam - 200) < 1, "收敛到目标，实际 " + cam.toFixed(2));
+  assert.strictEqual(cameraFollow(0, 3000, 1 / 60), 3000, "大跳变（>400）直接吸附");
+  // 关键手感守护：转向不再产生镜头瞬移——前瞻由速度连续驱动
+  const t1 = cameraTargetX(2000, 320, 64 * TILE), t2 = cameraTargetX(2000, 0, 64 * TILE), t3 = cameraTargetX(2000, -320, 64 * TILE);
+  assert.ok(t1 - t2 === 96 && t2 - t3 === 96, "转向时镜头目标连续变化（无瞬移）");
 });
 T("过关奖励 = 1000 + 剩余秒 ×5；踩怪连击 = 100 + (n-1)×50", () => {
   assert.strictEqual(levelBonus(0), CLEAR_BASE);
