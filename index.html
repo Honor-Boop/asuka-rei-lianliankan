@@ -244,10 +244,88 @@
   .mode-opt[data-mode="sudoku"]:hover { border-color: rgba(159,180,255,.6); box-shadow: 0 0 18px rgba(159,180,255,.25); }
   .mode-opt[data-mode="tower"] b { color: #ff6b6b; }
   .mode-opt[data-mode="tower"]:hover { border-color: rgba(255,107,107,.6); box-shadow: 0 0 18px rgba(255,107,107,.28); }
+
+  /* ---- 大厅选择界面（分组重设计） ---- */
+  #modeOverlay .diff-card { width: min(1280px, calc(100vw - 30px)); text-align: left; padding: 24px 32px 18px; }
+  #modeOverlay .diff-title { font-size: 26px; }
+  #modeOverlay .diff-title::after {
+    content: ""; display: block; height: 3px; width: 220px; margin-top: 8px;
+    background: linear-gradient(90deg, var(--rei), #b48cff 50%, var(--asuka), transparent);
+    border-radius: 2px;
+  }
+  #modeOverlay .diff-sub { margin-bottom: 16px; }
+  .mode-groups { display: flex; flex-direction: column; gap: 15px; }
+  .mg-head {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 3px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 9px; margin-bottom: 8px;
+  }
+  .mg-head::before { content: ""; width: 20px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--rei), var(--asuka)); }
+  .mg-head span { font-size: 9px; letter-spacing: 2px; opacity: .6; font-weight: 400; }
+  .mg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(218px, 1fr)); gap: 11px; }
+  #modeOverlay .mode-opt {
+    width: auto; padding: 11px 13px 10px; align-items: flex-start; gap: 5px;
+    position: relative; overflow: hidden;
+    border-left: 3px solid var(--mc, var(--panel-border));
+  }
+  #modeOverlay .mode-opt .row1 { display: flex; align-items: center; gap: 9px; width: 100%; }
+  #modeOverlay .mode-opt .ico {
+    font-style: normal; font-size: 21px; line-height: 1; flex: none;
+    filter: drop-shadow(0 0 6px var(--mc, rgba(255,255,255,.3)));
+    transition: transform .16s;
+  }
+  #modeOverlay .mode-opt:hover .ico { transform: scale(1.18) rotate(-6deg); }
+  #modeOverlay .mode-opt b { font-size: 16px; letter-spacing: 1.5px; }
+  #modeOverlay .mode-opt span { font-size: 10.5px; line-height: 1.45; }
+  #modeOverlay .mode-opt em {
+    position: absolute; right: 10px; top: 11px; font-size: 10px;
+    background: rgba(245,197,24,.12); border: 1px solid rgba(245,197,24,.35);
+    color: var(--gold); border-radius: 20px; padding: 1px 9px;
+  }
+  #modeOverlay .mode-opt em.new {
+    background: rgba(232,51,42,.16); border-color: rgba(232,51,42,.55); color: #ff8a80;
+    animation: newPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes newPulse { 50% { box-shadow: 0 0 10px rgba(232,51,42,.55); } }
+  #modeOverlay .mode-opt .num {
+    position: absolute; right: 9px; bottom: 4px; text-decoration: none;
+    font: 900 21px Consolas, "Courier New", monospace; color: rgba(255,255,255,.06);
+    transition: color .16s; pointer-events: none;
+  }
+  #modeOverlay .mode-opt:hover .num { color: var(--mc, rgba(255,255,255,.16)); }
+  #modeOverlay .mode-opt:hover { transform: translateY(-3px); }
+  .mode-teaser {
+    margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding-top: 12px; border-top: 1px dashed rgba(255,255,255,.14);
+  }
+  .mode-teaser .mt-label { font-size: 10px; letter-spacing: 3px; color: var(--text-dim); }
+  .mode-teaser .mt-chip {
+    font-size: 10.5px; color: var(--text-dim); letter-spacing: 1px;
+    border: 1px dashed rgba(255,255,255,.22); border-radius: 20px; padding: 2px 11px;
+  }
+  .mode-opt[data-mode="lianliankan"] { --mc: var(--rei); }
+  .mode-opt[data-mode="five"] { --mc: var(--asuka); }
+  .mode-opt[data-mode="view"] { --mc: #c9a6ff; }
+  .mode-opt[data-mode="spider"] { --mc: var(--eva-green); }
+  .mode-opt[data-mode="mine"] { --mc: #ffd54a; }
+  .mode-opt[data-mode="sudoku"] { --mc: #9fb4ff; }
+  .mode-opt[data-mode="puzzle"] { --mc: #7dffc4; }
+  .mode-opt[data-mode="klondike"] { --mc: #ff9ec4; }
+  .mode-opt[data-mode="match3"] { --mc: #ffe066; }
+  .mode-opt[data-mode="shmup"] { --mc: #5ce1ff; }
+  .mode-opt[data-mode="tower"] { --mc: #ff6b6b; }
+  .mode-opt[data-mode="breakout"] { --mc: #b0ff5c; }
+  .mode-opt[data-mode="platform"] { --mc: #b39dff; }
+  .mode-opt[data-mode="g2048"] { --mc: #ffd54a; }
+  .mode-opt[data-mode="memory"] { --mc: #ff9ec4; }
   .mode-opt[data-mode="breakout"] b { color: #b0ff5c; }
   .mode-opt[data-mode="breakout"]:hover { border-color: rgba(176,255,92,.6); box-shadow: 0 0 18px rgba(176,255,92,.25); }
   .mode-opt[data-mode="platform"] b { color: #b39dff; }
   .mode-opt[data-mode="platform"]:hover { border-color: rgba(179,157,255,.6); box-shadow: 0 0 18px rgba(179,157,255,.28); }
+  .mode-opt[data-mode="g2048"] b { color: #ffd54a; }
+  .mode-opt[data-mode="g2048"]:hover { border-color: rgba(255,213,74,.6); box-shadow: 0 0 18px rgba(255,213,74,.25); }
+  .mode-opt[data-mode="memory"] b { color: #ff9ec4; }
+  .mode-opt[data-mode="memory"]:hover { border-color: rgba(255,158,196,.6); box-shadow: 0 0 18px rgba(255,158,196,.28); }
   .mode-opt .em-new { color: var(--gold); }
 
   /* ---------- 结果 / 战绩 弹窗 ---------- */
@@ -467,73 +545,48 @@
   <div class="diff-card">
     <div class="diff-title">选择玩法 <span>SELECT MODE</span></div>
     <div class="diff-sub">指挥官，今晚想怎么打？</div>
-    <div class="diff-list">
-      <button class="diff-opt mode-opt" data-mode="lianliankan">
-        <b>连连看</b>
-        <span>三档难度 · 图案配对消除<br>倒计时 + 战绩系统</span>
-        <em>经典玩法</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="five">
-        <b>五珠对弈</b>
-        <span>与 AI 轮流落珠<br>五珠连线得分 · 分高者胜</span>
-        <em>新玩法</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="view">
-        <b>观景 · 挂机</b>
-        <span>全屏轮换壁纸<br>完整欣赏背景美图</span>
-        <em>放映模式</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="spider">
-        <b>蜘蛛纸牌</b>
-        <span>双姝扑克牌面<br>收集 8 套同花順</span>
-        <em>纸牌</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="mine">
-        <b>使徒扫雷</b>
-        <span>双主角协同排雷<br>使徒即地雷 · 三种规模</span>
-        <em>扫雷</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="sudoku">
-        <b>数独 · 9×9</b>
-        <span>三档难度 · 唯一解盘面<br>候选数 + 提示 + 战绩</span>
-        <em>数阵</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="puzzle">
-        <b>拼图</b>
-        <span>图库壁纸打乱复原<br>3×3 / 4×4 / 5×5 · 随机选图</span>
-        <em>新玩法</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="klondike">
-        <b>接龙</b>
-        <span>双姝扑克经典接龙<br>抽 1 / 抽 3 · 四叠 A→K</span>
-        <em>纸牌</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="match3">
-        <b>三消</b>
-        <span>交换宝石连锁消除<br>限时冲分 · AT碎裂</span>
-        <em>新玩法</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="shmup">
-        <b>EVA 出击</b>
-        <span>驾机迎击使徒弹幕<br>同步率暴走 · 三段 Boss</span>
-        <em>动作射击</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="tower">
-        <b>使徒来袭</b>
-        <span>通道布防拦截使徒<br>四类炮台 · 波次防线战</span>
-        <em>策略塔防</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="breakout">
-        <b>AT 弹球</b>
-        <span>力场挡板弹射阳电子炮<br>击碎装甲 · 同步率贯穿</span>
-        <em>物理技巧</em>
-      </button>
-      <button class="diff-opt mode-opt" data-mode="platform">
-        <b>EVA 突击</b>
-        <span>横版闯关跳跃踩使徒<br>6 大防区 · 双主角可选</span>
-        <em>动作闯关</em>
-      </button>
+    <div class="mode-groups">
+      <div class="mode-group">
+        <div class="mg-head">⚔ 动作 · 策略 <span>ACTION &amp; STRATEGY</span></div>
+        <div class="mg-grid">
+          <button class="diff-opt mode-opt" data-mode="shmup"><u class="num">10</u><i class="ico">🚀</i><div class="row1"><b>EVA 出击</b></div><span>驾机迎击使徒弹幕<br>同步率暴走 · 三段 Boss</span><em>动作射击</em></button>
+          <button class="diff-opt mode-opt" data-mode="tower"><u class="num">11</u><i class="ico">🛡️</i><div class="row1"><b>使徒来袭</b></div><span>通道布防拦截使徒<br>四类炮台 · 波次防线战</span><em>策略塔防</em></button>
+          <button class="diff-opt mode-opt" data-mode="platform"><u class="num">13</u><i class="ico">🏃</i><div class="row1"><b>EVA 突击</b></div><span>横版闯关跳跃踩使徒<br>6 大防区 · 双主角可选</span><em>动作闯关</em></button>
+          <button class="diff-opt mode-opt" data-mode="breakout"><u class="num">12</u><i class="ico">🧱</i><div class="row1"><b>AT 弹球</b></div><span>力场挡板弹射阳电子炮<br>击碎装甲 · 同步率贯穿</span><em>物理技巧</em></button>
+        </div>
+      </div>
+      <div class="mode-group">
+        <div class="mg-head">🧩 益智 · 消除 <span>PUZZLE &amp; MATCH</span></div>
+        <div class="mg-grid">
+          <button class="diff-opt mode-opt" data-mode="mine"><u class="num">05</u><i class="ico">💣</i><div class="row1"><b>使徒扫雷</b></div><span>双主角协同排雷<br>使徒即地雷 · 三种规模</span><em>扫雷</em></button>
+          <button class="diff-opt mode-opt" data-mode="sudoku"><u class="num">06</u><i class="ico">🔢</i><div class="row1"><b>数独 · 9×9</b></div><span>三档难度 · 唯一解盘面<br>候选数 + 提示 + 战绩</span><em>数阵</em></button>
+          <button class="diff-opt mode-opt" data-mode="puzzle"><u class="num">07</u><i class="ico">🧩</i><div class="row1"><b>拼图</b></div><span>图库壁纸打乱复原<br>3×3 / 4×4 / 5×5 · 随机选图</span><em>拼合</em></button>
+          <button class="diff-opt mode-opt" data-mode="match3"><u class="num">09</u><i class="ico">💎</i><div class="row1"><b>三消</b></div><span>交换宝石连锁消除<br>限时冲分 · AT碎裂</span><em>消除</em></button>
+          <button class="diff-opt mode-opt" data-mode="g2048"><u class="num">14</u><i class="ico">🎛️</i><div class="row1"><b>2048 进化</b></div><span>滑动合并晋升阶级<br>凑出神化 · 三档规模</span><em class="new">NEW</em></button>
+        </div>
+      </div>
+      <div class="mode-group">
+        <div class="mg-head">🀄 纸牌 · 棋类 <span>CARDS &amp; BOARD</span></div>
+        <div class="mg-grid">
+          <button class="diff-opt mode-opt" data-mode="lianliankan"><u class="num">01</u><i class="ico">🀄</i><div class="row1"><b>连连看</b></div><span>三档难度 · 图案配对消除<br>倒计时 + 战绩系统</span><em>经典</em></button>
+          <button class="diff-opt mode-opt" data-mode="spider"><u class="num">04</u><i class="ico">🕷️</i><div class="row1"><b>蜘蛛纸牌</b></div><span>双姝扑克牌面<br>收集 8 套同花順</span><em>纸牌</em></button>
+          <button class="diff-opt mode-opt" data-mode="klondike"><u class="num">08</u><i class="ico">🃏</i><div class="row1"><b>接龙</b></div><span>双姝扑克经典接龙<br>抽 1 / 抽 3 · 四叠 A→K</span><em>纸牌</em></button>
+          <button class="diff-opt mode-opt" data-mode="five"><u class="num">02</u><i class="ico">⚫</i><div class="row1"><b>五珠对弈</b></div><span>与 AI 轮流落珠<br>五珠连线得分 · 分高者胜</span><em>棋类</em></button>
+        </div>
+      </div>
+      <div class="mode-group">
+        <div class="mg-head">🧠 记忆 · 放映 <span>MEMORY &amp; IDLE</span></div>
+        <div class="mg-grid">
+          <button class="diff-opt mode-opt" data-mode="memory"><u class="num">15</u><i class="ico">🧠</i><div class="row1"><b>记忆训练</b></div><span>MAGI 翻牌配对训练<br>连击加分 · 图库头像</span><em class="new">NEW</em></button>
+          <button class="diff-opt mode-opt" data-mode="view"><u class="num">03</u><i class="ico">🌌</i><div class="row1"><b>观景 · 挂机</b></div><span>全屏轮换壁纸<br>完整欣赏背景美图</span><em>放映模式</em></button>
+        </div>
+      </div>
     </div>
+    <div class="mode-teaser">
+      <span class="mt-label">企画中 →</span>
+      <span class="mt-chip">数织 NONOGRAM</span><span class="mt-chip">推箱子 · 物资搬运</span><span class="mt-chip">节奏打击</span><span class="mt-chip">黑白棋</span>
+    </div>
+
     <button id="modeCancel" style="display:none;margin-top:18px;font-family:inherit;font-size:12px;color:var(--text);background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:8px 22px;cursor:pointer">返回当前对局</button>
   </div>
 </div>
@@ -1443,6 +1496,8 @@ document.querySelectorAll(".mode-opt").forEach(btn => {
     if (btn.dataset.mode === "tower") { location.href = "tower.html"; return; }
     if (btn.dataset.mode === "breakout") { location.href = "breakout.html"; return; }
     if (btn.dataset.mode === "platform") { location.href = "platform.html"; return; }
+    if (btn.dataset.mode === "g2048") { location.href = "2048.html"; return; }
+    if (btn.dataset.mode === "memory") { location.href = "memory.html"; return; }
     if (diffKey) resumeTimer(); else openDiff(false);
   });
 });
