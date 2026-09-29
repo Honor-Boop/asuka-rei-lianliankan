@@ -319,6 +319,52 @@
   .mode-opt[data-mode="platform"] { --mc: #b39dff; }
   .mode-opt[data-mode="g2048"] { --mc: #ffd54a; }
   .mode-opt[data-mode="memory"] { --mc: #ff9ec4; }
+
+  /* ---- 大厅明日香元素 ---- */
+  #modeOverlay .diff-card { border-color: rgba(232,51,42,.34); }
+  .asuka-art {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 330px;
+    border-radius: 0 17px 17px 0; overflow: hidden; z-index: 0;
+  }
+  .asuka-art img {
+    width: 100%; height: 100%; object-fit: cover; object-position: center 20%;
+    display: block; transition: transform .6s ease;
+  }
+  .asuka-art:hover img { transform: scale(1.05); }
+  .asuka-art::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, #241a4a 0%, rgba(36,26,74,.5) 34%, transparent 64%),
+                linear-gradient(0deg, rgba(36,26,74,.6), transparent 42%);
+  }
+  .asuka-art .aa-cap {
+    position: absolute; right: 14px; bottom: 14px; z-index: 1;
+    font: 900 10px Consolas, "Courier New", monospace; letter-spacing: 2px;
+    color: rgba(255,222,214,.95); background: rgba(224,57,42,.6);
+    border: 1px solid rgba(255,217,221,.55); border-radius: 4px; padding: 3px 9px;
+  }
+  .asuka-stamp {
+    position: absolute; left: 24px; bottom: 6px; z-index: 2;
+    transform: rotate(-3.5deg);
+    font: 900 9px Consolas, "Courier New", monospace; letter-spacing: 2px;
+    color: rgba(255,150,130,.95); background: #2b1c44;
+    border: 1px solid rgba(224,57,42,.55); border-radius: 4px; padding: 2px 8px;
+  }
+  .asuka-quote {
+    margin: -4px 0 14px; padding: 7px 13px; display: inline-block;
+    border-left: 3px solid #e0392a; border-radius: 0 10px 10px 0;
+    background: linear-gradient(90deg, rgba(224,57,42,.16), transparent);
+    transition: opacity .45s ease;
+    font-size: 12.5px; font-style: italic; letter-spacing: 1px; color: #ffb3a0;
+  }
+  .asuka-quote .aqp {
+    display: block; font-style: normal; font-size: 9.5px;
+    color: var(--text-dim); letter-spacing: 2px; margin-top: 3px;
+  }
+  .asuka-quote.fade { opacity: 0; }
+  @media (max-width: 1149px) { .asuka-art { display: none; } }
+  @media (min-width: 1150px) {
+    #modeOverlay .diff-card { padding-right: 352px; }
+  }
   .mode-opt[data-mode="breakout"] b { color: #b0ff5c; }
   .mode-opt[data-mode="breakout"]:hover { border-color: rgba(176,255,92,.6); box-shadow: 0 0 18px rgba(176,255,92,.25); }
   .mode-opt[data-mode="platform"] b { color: #b39dff; }
@@ -544,8 +590,11 @@
 <!-- 玩法选择（全屏，最先出现） -->
 <div id="modeOverlay" class="modal">
   <div class="diff-card">
-    <div class="diff-title">选择玩法 <span>SELECT MODE</span></div>
+    <div class="asuka-art"><img src="wallpapers/asuka_wall_07.jpg" alt="明日香"><div class="aa-cap">EVA-02 · PILOT: SORYU</div></div>
+  <div class="asuka-stamp">EVA-02 · 適格者</div>
+  <div class="diff-title">选择玩法 <span>SELECT MODE</span></div>
     <div class="diff-sub">指挥官，今晚想怎么打？</div>
+  <div class="asuka-quote" id="asukaQuote"><span class="aq">「何様よ、この私に指図するつもり！？」</span><span class="aqp">── 明日香 · 别小看人！</span></div>
     <div class="mode-groups">
       <div class="mode-group">
         <div class="mg-head">⚔ 动作 · 策略 <span>ACTION &amp; STRATEGY</span></div>
@@ -1509,6 +1558,29 @@ $("modeBtn").addEventListener("click", () => { ensureAudio(); openMode(!!diffKey
 layout();
 renderTime();
 modeOverlay.classList.add("show");
+
+/* 明日香语录轮播 */
+(function () {
+  const Q = [
+    ["「何様よ、この私に指図するつもり！？」", "── 明日香 · 别小看人！"],
+    ["「あんたバカぁ？ 三度目よ！」", "── 明日香 · 都第三次了哦！"],
+    ["「私が一番、最強のパイロットなんだから！」", "── 明日香 · 我可是最强驾驶员"],
+    ["「シンクロ率また上げて見せるわ」", "── 明日香 · 同步率还会再涨的"],
+    ["「ベートーベン第九よ、踏んではいけないの！」", "── 明日香 · 命运的敲门声"],
+  ];
+  const el = document.getElementById("asukaQuote");
+  if (!el) return;
+  let qi = 0;
+  setInterval(() => {
+    el.classList.add("fade");
+    setTimeout(() => {
+      qi = (qi + 1) % Q.length;
+      el.querySelector(".aq").textContent = Q[qi][0];
+      el.querySelector(".aqp").textContent = Q[qi][1];
+      el.classList.remove("fade");
+    }, 450);
+  }, 5200);
+})();
 </script>
 </body>
 </html>
