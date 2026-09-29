@@ -336,6 +336,55 @@
     background: linear-gradient(90deg, #241a4a 0%, rgba(36,26,74,.5) 34%, transparent 64%),
                 linear-gradient(0deg, rgba(36,26,74,.6), transparent 42%);
   }
+  .asuka-art .aa-tools {
+    position: absolute; left: 10px; bottom: 12px; z-index: 2;
+    display: flex; gap: 6px;
+  }
+  .asuka-art .aa-btn {
+    font: 700 10.5px "Segoe UI", "Microsoft YaHei", sans-serif; letter-spacing: 1px;
+    color: #fff; background: rgba(20,14,40,.78); cursor: pointer;
+    border: 1px solid rgba(255,255,255,.4); border-radius: 20px; padding: 3px 11px;
+    transition: all .15s; backdrop-filter: blur(3px);
+  }
+  .asuka-art .aa-btn:hover { background: rgba(224,57,42,.75); border-color: #ffd9dd; }
+  .asuka-art .aa-picker {
+    position: absolute; inset: 0; z-index: 3; display: none;
+    flex-direction: column; background: rgba(16,11,34,.96); backdrop-filter: blur(4px);
+  }
+  .asuka-art .aa-picker.open { display: flex; }
+  .asuka-art .aa-head {
+    display: flex; align-items: center; gap: 6px; padding: 9px 10px 7px; flex: none;
+    border-bottom: 1px solid rgba(255,255,255,.14);
+  }
+  .asuka-art .aa-head .t { font: 900 10px Consolas, monospace; letter-spacing: 2px; color: var(--gold); flex: 1; }
+  .asuka-art .aa-tab {
+    font: 700 10px "Segoe UI", sans-serif; color: var(--text-dim); cursor: pointer;
+    background: transparent; border: 1px solid rgba(255,255,255,.22); border-radius: 20px; padding: 1.5px 9px;
+    transition: all .12s;
+  }
+  .asuka-art .aa-tab.active { color: #14101f; background: var(--gold); border-color: var(--gold); }
+  .asuka-art .aa-tab.aa-rand { color: var(--gold); }
+  .asuka-art .aa-tab.aa-rand:hover { background: rgba(255,224,102,.2); }
+  .asuka-art .aa-close {
+    font: 700 12px Consolas, monospace; color: var(--text); cursor: pointer;
+    background: transparent; border: none; padding: 0 4px;
+  }
+  .asuka-art .aa-grid {
+    flex: 1; overflow-y: auto; padding: 8px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; align-content: start;
+  }
+  .asuka-art .aa-thumb {
+    position: relative; border-radius: 7px; overflow: hidden; cursor: pointer;
+    border: 2px solid transparent; transition: border-color .12s, transform .12s;
+  }
+  .asuka-art .aa-thumb img { width: 100%; height: 74px; object-fit: cover; display: block; }
+  .asuka-art .aa-thumb:hover { transform: scale(1.04); }
+  .asuka-art .aa-thumb.sel { border-color: var(--gold); box-shadow: 0 0 10px rgba(255,224,102,.5); }
+  .asuka-art .aa-thumb .ch {
+    position: absolute; left: 4px; top: 4px; font: 700 8.5px "Segoe UI", sans-serif;
+    color: #fff; background: rgba(20,14,40,.72); border-radius: 3px; padding: 1px 5px;
+    letter-spacing: 1px;
+  }
   .asuka-art .aa-cap {
     position: absolute; right: 14px; bottom: 14px; z-index: 1;
     font: 900 10px Consolas, "Courier New", monospace; letter-spacing: 2px;
@@ -590,7 +639,23 @@
 <!-- 玩法选择（全屏，最先出现） -->
 <div id="modeOverlay" class="modal">
   <div class="diff-card">
-    <div class="asuka-art"><img src="wallpapers/asuka_wall_07.jpg" alt="明日香"><div class="aa-cap">EVA-02 · PILOT: SORYU</div></div>
+    <div class="asuka-art">
+    <img id="aaImg" src="wallpapers/asuka_wall_07.jpg" alt="明日香">
+    <div class="aa-cap" id="aaCap">EVA-02 · PILOT: SORYU</div>
+    <div class="aa-tools"><button class="aa-btn" id="aaPickBtn">🖼 更换</button><button class="aa-btn" id="aaRandBtn">🎲 随机</button></div>
+    <div class="aa-picker" id="aaPicker">
+      <div class="aa-head">
+        <span class="t">GALLERY · 选择立绘</span>
+        <button class="aa-tab active" data-ch="all">全部</button>
+        <button class="aa-tab" data-ch="asuka">明日香</button>
+        <button class="aa-tab" data-ch="rei">绫波丽</button>
+        <button class="aa-tab" data-ch="misato">美里</button>
+        <button class="aa-tab aa-rand" id="aaRand2">🎲</button>
+        <button class="aa-close" id="aaClose">✕</button>
+      </div>
+      <div class="aa-grid" id="aaGrid"></div>
+    </div>
+  </div>
   <div class="asuka-stamp">EVA-02 · 適格者</div>
   <div class="diff-title">选择玩法 <span>SELECT MODE</span></div>
     <div class="diff-sub">指挥官，今晚想怎么打？</div>
@@ -1580,6 +1645,76 @@ modeOverlay.classList.add("show");
       el.classList.remove("fade");
     }, 450);
   }, 5200);
+})();
+
+/* 立绘选照：图库 → 立绘栏（记忆选择） */
+(function () {
+  const CAP = { asuka: "EVA-02 · PILOT: SORYU", rei: "EVA-00 · PILOT: REI", misato: "NERV · OPERATIONS: KATSURAGI" };
+  const DEF = { src: "wallpapers/asuka_wall_07.jpg", char: "asuka" };
+  const KEY = "eva_lobby_art";
+  const img = document.getElementById("aaImg");
+  const cap = document.getElementById("aaCap");
+  const picker = document.getElementById("aaPicker");
+  const grid = document.getElementById("aaGrid");
+  if (!img || !window.WALLPAPER_LIST) return;
+  const list = window.WALLPAPER_LIST;
+  let filter = "all";
+
+  function apply(src, ch) {
+    img.src = src;
+    cap.textContent = CAP[ch] || "NERV · GALLERY";
+    [...grid.children].forEach(t => t.classList.toggle("sel", t.dataset.src === src));
+  }
+  function fill() {
+    grid.innerHTML = "";
+    const items = list.filter(w => filter === "all" || w.char === filter);
+    for (const w of items) {
+      const d = document.createElement("div");
+      d.className = "aa-thumb" + (w.src === img.src ? " sel" : "");
+      d.dataset.src = w.src;
+      const im = document.createElement("img");
+      im.src = w.thumb; im.loading = "lazy"; im.alt = "";
+      const ch = document.createElement("span");
+      ch.className = "ch";
+      ch.textContent = w.char === "asuka" ? "ASUKA" : w.char === "rei" ? "REI" : "MISATO";
+      d.appendChild(im); d.appendChild(ch);
+      d.addEventListener("click", () => {
+        apply(w.src, w.char);
+        try { localStorage.setItem(KEY, JSON.stringify({ src: w.src, char: w.char })); } catch (e) {}
+      });
+      grid.appendChild(d);
+    }
+  }
+  function random() {
+    const pool = list.filter(w => filter === "all" || w.char === filter);
+    const w = pool[Math.floor(Math.random() * pool.length)] || list[Math.floor(Math.random() * list.length)];
+    apply(w.src, w.char);
+    try { localStorage.setItem(KEY, JSON.stringify({ src: w.src, char: w.char })); } catch (e) {}
+  }
+  document.getElementById("aaPickBtn").addEventListener("click", () => { fill(); picker.classList.add("open"); });
+  document.getElementById("aaClose").addEventListener("click", () => picker.classList.remove("open"));
+  document.getElementById("aaRandBtn").addEventListener("click", random);
+  document.getElementById("aaRand2").addEventListener("click", random);
+  picker.querySelectorAll(".aa-tab[data-ch]").forEach(t => {
+    t.addEventListener("click", () => {
+      filter = t.dataset.ch;
+      picker.querySelectorAll(".aa-tab[data-ch]").forEach(x => x.classList.toggle("active", x === t));
+      fill();
+    });
+  });
+  // 恢复上次选择（图已删除则回退默认）
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (saved && saved.src) {
+    img.src = saved.src;
+    cap.textContent = CAP[saved.char] || "NERV · GALLERY";
+    img.addEventListener("error", function h() {
+      img.removeEventListener("error", h);
+      img.src = DEF.src;
+      cap.textContent = CAP[DEF.char];
+      try { localStorage.removeItem(KEY); } catch (e) {}
+    });
+  }
 })();
 </script>
 </body>
