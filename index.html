@@ -246,7 +246,8 @@
   .mode-opt[data-mode="tower"]:hover { border-color: rgba(255,107,107,.6); box-shadow: 0 0 18px rgba(255,107,107,.28); }
 
   /* ---- 大厅选择界面（分组重设计） ---- */
-  #modeOverlay .diff-card { width: min(1280px, calc(100vw - 30px)); text-align: left; padding: 24px 32px 18px; }
+  #modeOverlay .diff-card { width: min(1280px, calc(100vw - 30px)); max-width: calc(100vw - 30px);
+    max-height: calc(100vh - 36px); overflow-y: auto; text-align: left; padding: 24px 32px 18px; }
   #modeOverlay .diff-title { font-size: 26px; }
   #modeOverlay .diff-title::after {
     content: ""; display: block; height: 3px; width: 220px; margin-top: 8px;
