@@ -48,3 +48,5 @@
   > **每次覆盖更新安装目录都会把它们删掉** —— 必须用本脚本刷新，否则快捷方式会失效。
 
   用法：`python scripts/refresh_local.py`（可选 `--zip` / `--target`）
+
+> 回忆与经验总结（项目全程复盘）见 [docs/RETROSPECTIVE.md](docs/RETROSPECTIVE.md)。
